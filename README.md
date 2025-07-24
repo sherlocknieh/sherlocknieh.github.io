@@ -1,3 +1,2 @@
-# sherlocknieh.github.io
 
-简历: https://sherlocknieh.github.io/resume
+简历: [https://sherlocknieh.github.io/resume](https://sherlocknieh.github.io/resume)
