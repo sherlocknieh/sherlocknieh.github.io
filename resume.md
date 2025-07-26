@@ -5,48 +5,37 @@
         <h2>聂祥胜</h2>
         <div>手机/微信: 18106081404</div>
         <div>邮箱: sherlocknieh@gmail.com</div>
-        <div>居住地址：厦门大学翔安校区</div>
+        <div>现居: 厦门大学翔安校区</div>
     </div>
     <img src="avatar.jpg" alt="我的头像" width="96" height="132">
 </div>
 
 
 ---
-
-## 🧑‍💻 个人简介
-
-- 个人网站：https://sherlocknieh.github.io
-- GitHub: https://github.com/sherlocknieh
-
-
-- 拥有...，熟悉..., 精通...
-- 追求...，熟悉...，注重...
-
----
-
 ## 🎓 教育背景
 
 -  **学校: 厦门大学**
 -  **专业: 计算机科学与技术 (本科)**
 -  **时间: 2022.09 - 2026.06**
-
-- 课程:
-  - 硬件: 数字电路、计算机组成原理
-  - 软件: 数据结构、算法、数据库
-  - 系统: 操作系统编程、编译原理
-  - 网络: 计算机网络、Web 开发
-  - 数学: 线性代数、概率论、数值分析
+-
+- 了解计算机软硬件基础知识
+- 熟悉 C语言, C++, Python语言
+- 在多个课内小型项目担任开发组长
 
 ---
 
 
 ## 🛠 技能清单
 
-- 编程语言：`Python` `Java` `SQL` `Bash`
-- 后端框架：`Flask` `FastAPI` `Spring Boot`
-- 数据库相关：`MySQL` `PostgreSQL` `MongoDB`
-- 工具/平台：`Git` `Docker` `Linux` `Jupyter`
-- 英语水平：CET-6 / 可读写技术文档
+- 编程语言：`Python` `C/C++` `JavaScript`
+- 前端：`HTML+CSS+JS` `Vue.js` `React.js`
+- 后端：`Flask`  `Node.js`
+- 数据库：`SQLite` `SQL Server`
+- 嵌入式/物联网：`ESP32` `树莓派`
+- 工具/环境：
+  - `VSCode` `Git` `Linux` `gcc工具链` `Python虚拟环境`
+  - 善于使用AI辅助编程与学习（如 Copilot）
+- 英语：`CET-6` / 可流畅阅读英文文档
 
 ---
 
@@ -62,6 +51,21 @@
   - 使用 SQL 语句进行数据清洗与报表自动化
 - 收获：
   - 熟练掌握 Flask 项目结构，提升代码复用率与可维护性
+
+- 个人网站：https://sherlocknieh.github.io
+- GitHub: https://github.com/sherlocknieh
+
+---
+
+## 📎 附加信息（可选）
+
+- 个人博客：https://sherlocknieh.github.io
+
+- GitHub: https://github.com/sherlocknieh
+
+- 常在知乎写一些数学和编程领域的技术文章
+  - [KMP 算法最简解释](https://zhuanlan.zhihu.com/p/661673949)
+  - https://zhuanlan.zhihu.com/p/641614164
 
 ---
 
@@ -81,6 +85,11 @@
 
 ---
 
+## 🧑‍💻 个人简介
+
+
+---
+
 ## 📎 附加信息（可选）
 
 - 开源项目维护者：`awesome-china-dev`（1000+ Star）
@@ -92,3 +101,5 @@
 ## 📄 证书与奖项（可选）
 
 - 暂无
+
+-->
