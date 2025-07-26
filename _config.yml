@@ -2,3 +2,5 @@ theme: jekyll-theme-cayman
 markdown: kramdown
 kramdown:
   math_engine: mathjax
+title: 博客主页
+description: 一个简单的 Jekyll 博客
