@@ -1,14 +1,10 @@
 ---
 layout: default
-title: 我的博客
+title: 我的 GitHub Pages
 ---
 
-欢迎来到我的博客！
+- 文章列表: [/posts](/posts)
 
-- GitHub: [https://github.com/sherlocknieh](https://github.com/sherlocknieh)
+- 个人简历: [/resume](/resume)
 
-- 个人主页: [https://sherlocknieh.github.io/HOME](https://sherlocknieh.github.io/HOME)
-
-- 简历: [/pages/resume](/resume)
-
-- 文章列表: [/pages/posts](/posts)
+- 个人主页: [/app/home](/app/home)

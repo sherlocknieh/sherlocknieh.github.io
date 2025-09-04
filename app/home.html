@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人主页 - HOME</title>
+    <link rel="stylesheet" href="styles/global.css">
+</head>
+
+<body class="breakpoint-lg">
+    <div class="app-layout">
+        <app-sidebar></app-sidebar>
+        <main class="main-content">
+        <app-header></app-header>
+            <div class="container-fluid">
+                <app-content id="mainContent"></app-content>
+            </div>
+        <app-footer></app-footer>
+        </main>
+    </div>
+
+    <!-- 引入模块化的 Web Components -->
+    <script type="module">
+        // 主入口文件 - 导入并注册所有 Web Components
+        import { AppHeader } from './components/header/header.js';
+        import { AppSidebar } from './components/sidebar/sidebar.js';
+        import { AppFooter } from './components/footer/footer.js';
+        import { AppContent } from './components/content/content.js';
+        import { layoutManager } from './scripts/layout-manager.js';
+
+        // 注册所有 Web Components
+        customElements.define('app-header', AppHeader);
+        customElements.define('app-sidebar', AppSidebar);
+        customElements.define('app-footer', AppFooter);
+        customElements.define('app-content', AppContent);
+
+        // 全局初始化逻辑
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Web Components 已加载完成');
+            
+            // 初始化布局管理器
+            layoutManager.init();
+            
+            // 将布局管理器暴露到全局，供其他组件使用
+            window.layoutManager = layoutManager;
+            
+            // 监听布局变化事件
+            document.addEventListener('layout:breakpoint:change', (e) => {
+                console.log('断点变化:', e.detail);
+            });
+            
+            document.addEventListener('layout:sidebar:change', (e) => {
+                console.log('侧边栏状态变化:', e.detail);
+            });
+            
+            // 设置主题切换
+            const themeToggle = document.querySelector('[data-action="toggle-theme"]');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    const currentTheme = document.documentElement.getAttribute('data-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                });
+            }
+            
+            // 恢复保存的主题
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,4 +1,5 @@
 ---
+permalink: /posts
 layout: default
 title: 博客文章
 ---

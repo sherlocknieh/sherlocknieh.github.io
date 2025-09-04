@@ -1,0 +1,150 @@
+/* 自定义样式 - 导航条样式 */
+
+/* 导航条头部区域 */
+.page-header {
+    padding: 0.75rem 1rem; /* 进一步缩小为导航条高度 */
+    background-image: linear-gradient(120deg, #155799, #159957);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 导航条容器 */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* 导航条左侧、中间、右侧区域 */
+.navbar-left,
+.navbar-center,
+.navbar-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.navbar-left {
+    justify-content: flex-start;
+}
+
+.navbar-center {
+    justify-content: center;
+}
+
+.navbar-right {
+    justify-content: flex-end;
+}
+
+/* 项目名称样式 */
+.project-name {
+    margin: 0;
+    font-size: 1.5rem; /* 导航条适合的大小 */
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+}
+
+/* 导航链接通用样式 */
+.home-link,
+.github-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #fff;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.home-link:hover,
+.github-link:hover {
+    background-color: rgba(255,255,255,0.1);
+    transform: translateY(-1px);
+    color: #fff;
+    text-decoration: none;
+}
+
+/* 图标样式 */
+.home-icon,
+.github-icon {
+    font-size: 1.1rem !important;
+    width: 1.1rem !important;
+    height: 1.1rem !important;
+    display: inline-block !important;
+}
+
+/* SVG图标样式 */
+.home-icon svg,
+.github-icon svg {
+    width: 100% !important;
+    height: 100% !important;
+    fill: currentColor !important;
+    display: block !important;
+}
+
+/* 文字样式 */
+.home-text,
+.github-text {
+    font-size: 0.9rem;
+}
+
+
+/* 主内容区域调整 - 占满视口高度，添加边框 */
+.main-content {
+    min-width: 1000px;
+    margin: 1rem auto; /* 顶部留出更多空间避免紧贴导航条 */
+    border: 1px solid rgba(187, 187, 187, 0.7);
+    border-radius: 12px;
+}
+
+/* 移动端主内容区域 */
+@media screen and (max-width: 30em) {
+    .main-content {
+        margin: 2rem 0.5rem 0.5rem 0.5rem; /* 顶部留出空间 */
+        padding: 1.5rem;
+        min-height: calc(100vh - 120px); /* 减去移动端导航条高度和边距 */
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+}
+
+/* 页面底部样式调整 - 滚动后显示 */
+.site-footer {
+    margin-top: 0;
+    padding: 2rem 1rem;
+    border-top: 1px solid #e1e4e8;
+    text-align: center;
+    font-size: 0.875rem;
+    color: #586069;
+    background-color: #f6f8fa;
+    position: relative;
+    z-index: 1;
+}
+
+/* 确保页面整体布局 */
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #f8f9fa; /* 页面背景色 */
+}
+
+
+/* 移动端内容区域调整 */
+@media screen and (max-width: 20em) {
+    .main-content > * {
+        min-width: 10em;
+        margin: 1rem 1rem;
+    }
+}
