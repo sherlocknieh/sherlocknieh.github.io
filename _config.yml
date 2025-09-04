@@ -1,6 +1,17 @@
+# Jekyll主题配置
 theme: jekyll-theme-cayman
-markdown: kramdown
-kramdown:
-  math_engine: mathjax
-title: 博客主页
-description: 一个简单的 Jekyll 博客
+
+# 默认布局设置 - 让所有页面自动使用default布局
+defaults:
+  - scope:
+      path: ""  # 应用到所有文件
+    values:
+      layout: "default"  # 使用default布局
+
+# Sass编译配置 - 用于屏蔽警告和优化输出
+sass:
+  quiet_deps: true      # 屏蔽依赖警告
+  verbose: false        # 减少详细输出
+  silence_deprecations: # 屏蔽特定的弃用警告
+    - import            # 屏蔽@import警告
+    - global-builtin    # 屏蔽全局内置函数警告

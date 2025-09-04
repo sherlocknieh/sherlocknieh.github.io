@@ -1,0 +1,36 @@
+<!-- 引入 Mermaid 支持 -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    // 配置 Mermaid
+    mermaid.initialize({
+        startOnLoad: false,  // 改为 false，手动初始化
+        theme: 'default',
+        securityLevel: 'loose',
+        flowchart: {
+            useMaxWidth: true,
+            htmlLabels: true
+        }
+    });
+
+    // 页面加载完成后处理 mermaid 代码块
+    document.addEventListener('DOMContentLoaded', function() {
+        // 查找所有 mermaid 代码块
+        const mermaidBlocks = document.querySelectorAll('pre code.language-mermaid, code.language-mermaid');
+        
+        mermaidBlocks.forEach(function(block, index) {
+            // 创建 mermaid div 容器
+            const mermaidDiv = document.createElement('div');
+            mermaidDiv.className = 'mermaid';
+            mermaidDiv.textContent = block.textContent;
+            
+            // 替换原来的代码块
+            const pre = block.closest('pre') || block;
+            pre.parentNode.replaceChild(mermaidDiv, pre);
+        });
+        
+        // 初始化 mermaid
+        if (document.querySelectorAll('.mermaid').length > 0) {
+            mermaid.init();
+        }
+    });
+</script>
