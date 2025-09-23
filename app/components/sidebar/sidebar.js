@@ -1,3 +1,6 @@
+// 在文件顶部添加导入
+import '../card/card.js';
+
 // Sidebar Component - 侧边栏组件
 export class AppSidebar extends HTMLElement {
     constructor() {
@@ -123,3 +126,6 @@ export class AppSidebar extends HTMLElement {
         content.classList.toggle('collapsed');
     }
 }
+
+// 自动注册组件
+customElements.define('app-sidebar', AppSidebar);

@@ -4,74 +4,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>个人主页 - HOME</title>
+    <title>HOME</title>
     <link rel="stylesheet" href="styles/global.css">
+    <style>
+        body {
+            display: grid;
+            grid-template-areas:
+                "header header"
+                "menu content"
+                "footer footer";
+            grid-template-columns: 1fr 3fr;
+            gap: 5px;
+            padding: 5px;
+        }
+
+        app-header {
+            grid-area: header;
+            text-align: center;
+        }
+
+        app-sidebar {
+            grid-area: menu;
+        }
+
+        div.content {
+            grid-area: content;
+        }
+
+        app-footer {
+            grid-area: footer;
+        }
+    </style>
 </head>
 
-<body class="breakpoint-lg">
-    <div class="app-layout">
-        <app-sidebar></app-sidebar>
-        <main class="main-content">
-        <app-header></app-header>
-            <div class="container-fluid">
-                <app-content id="mainContent"></app-content>
+<body>
+    <app-header></app-header>
+    <app-sidebar></app-sidebar>
+    <div class="content">
+        <div class="welcome-section">
+            <h1>欢迎使用卡片组件</h1>
+            <p>这里展示了Web Components卡片组件在主页中的应用示例。</p>
+        </div>
+
+        <div class="cards-grid">
+            <card-component title="关于我" variant="primary" clickable>
+                <p>这是一个关于页面的卡片，点击可以了解更多信息。</p>
+                <p>使用Web Components技术构建，具有良好的封装性和复用性。</p>
+            </card-component>
+
+            <card-component title="项目展示" variant="success" clickable>
+                <p>查看我的项目作品集和技术栈。</p>
+                <ul>
+                    <li>前端开发</li>
+                    <li>Web Components</li>
+                    <li>响应式设计</li>
+                </ul>
+            </card-component>
+
+            <card-component title="联系方式" variant="warning" clickable>
+                <p>如果您有任何问题或合作意向，欢迎联系我。</p>
+                <p>📧 Email | 📱 Phone | 💼 LinkedIn</p>
+            </card-component>
+        </div>
+
+        <div class="feature-cards">
+            <div class="cards-container">
+                <card-component title="响应式设计">
+                    <p>自适应各种屏幕尺寸，提供最佳的用户体验。</p>
+                </card-component>
+
             </div>
-        <app-footer></app-footer>
-        </main>
+        </div>
     </div>
-
-    <!-- 引入模块化的 Web Components -->
-    <script type="module">
-        // 主入口文件 - 导入并注册所有 Web Components
-        import { AppHeader } from './components/header/header.js';
-        import { AppSidebar } from './components/sidebar/sidebar.js';
-        import { AppFooter } from './components/footer/footer.js';
-        import { AppContent } from './components/content/content.js';
-        import { layoutManager } from './scripts/layout-manager.js';
-
-        // 注册所有 Web Components
-        customElements.define('app-header', AppHeader);
-        customElements.define('app-sidebar', AppSidebar);
-        customElements.define('app-footer', AppFooter);
-        customElements.define('app-content', AppContent);
-
-        // 全局初始化逻辑
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('Web Components 已加载完成');
-            
-            // 初始化布局管理器
-            layoutManager.init();
-            
-            // 将布局管理器暴露到全局，供其他组件使用
-            window.layoutManager = layoutManager;
-            
-            // 监听布局变化事件
-            document.addEventListener('layout:breakpoint:change', (e) => {
-                console.log('断点变化:', e.detail);
-            });
-            
-            document.addEventListener('layout:sidebar:change', (e) => {
-                console.log('侧边栏状态变化:', e.detail);
-            });
-            
-            // 设置主题切换
-            const themeToggle = document.querySelector('[data-action="toggle-theme"]');
-            if (themeToggle) {
-                themeToggle.addEventListener('click', () => {
-                    const currentTheme = document.documentElement.getAttribute('data-theme');
-                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                    document.documentElement.setAttribute('data-theme', newTheme);
-                    localStorage.setItem('theme', newTheme);
-                });
-            }
-            
-            // 恢复保存的主题
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                document.documentElement.setAttribute('data-theme', savedTheme);
-            }
-        });
-    </script>
+    <app-footer></app-footer>
 </body>
+
+<script type="module">
+    import './components/header/header.js';
+    import './components/sidebar/sidebar.js';
+    import './components/footer/footer.js';
+    import './components/card/card.js';
+</script>
+
+<script>
+    // 等待DOM加载完成后设置卡片事件
+    document.addEventListener('DOMContentLoaded', function () {
+        // 为可点击卡片添加事件监听
+        const clickableCards = document.querySelectorAll('card-component[clickable]');
+
+        clickableCards.forEach((card, index) => {
+            card.addEventListener('card-click', function (e) {
+                const title = e.detail.title;
+
+                switch (title) {
+                    case '关于我':
+                        alert('跳转到关于页面...');
+                        // 这里可以添加实际的页面跳转逻辑
+                        // window.location.href = '/pages/about.html';
+                        break;
+                    case '项目展示':
+                        alert('跳转到项目展示页面...');
+                        // window.location.href = '/pages/projects.html';
+                        break;
+                    case '联系方式':
+                        alert('跳转到联系页面...');
+                        // window.location.href = '/pages/contact.html';
+                        break;
+                    default:
+                        console.log('卡片被点击:', e.detail);
+                }
+            });
+        });
+    });
+</script>
 
 </html>

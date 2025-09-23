@@ -11,7 +11,7 @@ title: 个人简历
         <div>邮箱: sherlocknieh@gmail.com</div>
         <div>地址: 厦门大学翔安校区</div>
     </div>
-    <img src="/assets/avatar.jpg" alt="我的头像" width="96" height="132">
+    <img src="/assets/avatar.jpg" alt="我的头像" width="96" height="132" style="border-radius: 5%;">
 </div>
 
 

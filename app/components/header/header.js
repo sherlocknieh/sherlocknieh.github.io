@@ -109,3 +109,6 @@ export class AppHeader extends HTMLElement {
         }
     }
 }
+
+// 自动注册组件
+customElements.define('app-header', AppHeader);

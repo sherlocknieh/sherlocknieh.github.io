@@ -22,11 +22,7 @@ bundle install
 bundle exec jekyll serve
 ```
 
-浏览器访问 http://localhost:4000 查看预览
 
+预览效果: [http://localhost:4000](http://localhost:4000)
+实际效果: [https://sherlocknieh.github.io](https://sherlocknieh.github.io)
 
-防止 bundle 生成 lock 文件
-```bash
-bundle exec --no-lock jekyll serve
-
-```
