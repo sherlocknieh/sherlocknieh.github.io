@@ -1,10 +1,10 @@
 ---
 layout: default
-title: 我的 GitHub Pages
+title: 主页
 ---
 
-- 文章列表: [/posts](/posts)
+# 内容导航
 
-- 个人简历: [/resume](/resume)
+- [文章列表](/posts)
 
-- 个人主页: [/app/home](/app/home)
+- [个人简历](/resume)

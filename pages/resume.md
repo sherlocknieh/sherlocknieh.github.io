@@ -34,7 +34,7 @@ title: 个人简历
 
   - 简介: `树莓派` + `Python` 实现的多功能桌面机器人
   - 技术: `Eventbus` 多模块通信, Python 多线程, 预训练AI模型调用
-  - 源码: https://github.com/sherlocknieh/DeskRobot
+  - 项目主页: [https://github.com/sherlocknieh/DeskRobot](https://github.com/sherlocknieh/DeskRobot)
 
 <p></p>
 
@@ -42,7 +42,7 @@ title: 个人简历
 
   - 简介: ESP32 驱动的远程窗帘控制器
   - 技术: `C++`, `ESP32`, `PlatformIO`, `Blinker`, `MQTT`
-  - 源码: https://github.com/sherlocknieh/CurtainPuller
+  - 项目主页: [https://github.com/sherlocknieh/CurtainPuller](https://github.com/sherlocknieh/CurtainPuller)
 
 <p></p>
 
@@ -50,14 +50,14 @@ title: 个人简历
 
   - 简介: 基于用户的协同过滤算法和基于内容的推荐算法的电影推荐系统
   - 技术: `Python爬虫`, `Flask网页`, `SQLite储存`, `ItemCF算法`
-  - 源码: https://github.com/sherlocknieh/Movie_Recommend
+  - 项目主页: [https://github.com/sherlocknieh/Movie_Recommend](https://github.com/sherlocknieh/Movie_Recommend)
 
 <p></p>
 
 - Electron 邮件客户端
 
   - 简介: Electron + Vue 实现的聚合邮件客户端
-  - 地址: https://github.com/sherlocknieh/mail-electron
+  - 地址: [https://github.com/sherlocknieh/mail-electron](https://github.com/sherlocknieh/mail-electron)
 
 
 
@@ -75,9 +75,8 @@ title: 个人简历
 
 <p></p>
 
-- 多次在课内项目中担任组长;
-
 - 偶尔写点科普/技术类文章:
+
   - [世界上最简单的 KMP 算法解释](https://zhuanlan.zhihu.com/p/661673949)
   - [一篇文章, 解决你对多元函数的一切疑惑](https://zhuanlan.zhihu.com/p/641614164)
 
