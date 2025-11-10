@@ -7,4 +7,4 @@ title: 主页
 
 - [文章列表](/posts)
 
-- [个人简历](/resume)
+- [个人简历](/pages/resume)

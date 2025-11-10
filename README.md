@@ -2,17 +2,13 @@
 
 ## 本地运行
 
-先安装 Ruby 和 Bundler (Ruby 的包管理器)
+安装 Ruby
 ```bash
 winget search Ruby
-```
-
-寻找带 MSYS2 的最新版本安装 (新版通常自带 Bundler)
-```
 winget install RubyInstallerTeam.RubyWithDevKit.3.4
 ```
 
-进入项目目录, 安装项目依赖
+进入项目主目录, 安装项目依赖
 ```bash
 bundle install
 ```
