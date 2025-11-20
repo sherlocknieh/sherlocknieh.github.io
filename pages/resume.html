@@ -5,6 +5,32 @@
     <meta charset="UTF-8">
     <title>个人简历</title>
     <style>
+        
+        /* 打印效果控制 */
+        @media print {
+
+            /* 使简历容器脱离文档流 */
+            .container {
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+            .section-title {
+                print-color-adjust: exact; /* 标准属性，Firefox */
+                -webkit-print-color-adjust: exact; /* 保持背景颜色 */
+            }
+            /* A4 打印和预览样式 */
+            @page {
+                size: A4;
+                margin: 0;
+            }
+        }
+
+        a {
+            color: #0a4b78;
+            text-decoration: underline;
+        }
+
         body {
             background-color: lightgray;
         }
@@ -13,10 +39,9 @@
             /* A4 纸大小 */
             width: 210mm;
             height: 297mm;
-            margin: 0 auto;
             padding: 8mm 16mm;
-            border: solid 1px #ccc;
-            box-shadow: 0 0 8px rgba(0, 0, 0, 0.12);
+            margin: 0 auto;
+            border: solid 1px lightgray;
             background: #fff;
             box-sizing: border-box;
             overflow: hidden;
@@ -49,9 +74,9 @@
             font-weight: bold;
             margin-top: 18px;
             font-size: 18px;
-            background: #f0f8ff;
+            background: #cbe6ff;
             padding: 4px 10px;
-            border-radius: 6px;
+            border-radius: 3px;
         }
 
         .project-list, .skill-list {
@@ -74,10 +99,6 @@
             margin-left: 8px;
             margin-bottom: 2px;
         }
-        .project-list a, .skill-list a {
-            color: #0a4b78;
-            text-decoration: underline;
-        }
         .project-list code, .skill-list code {
             background: #f4f4f4;
             border-radius: 3px;
@@ -94,35 +115,14 @@
             margin-bottom: 2px;
         }
 
-        /* 打印效果控制 */
-        @media print {
-
-            /* 使简历容器脱离文档流 */
-            .container {
-                position: absolute;
-                left: 0;
-                top: 0;
-            }
-
-            /* A4 打印和预览样式 */
-            @page {
-                size: A4;
-                margin: 0;
-            }
-        }
-
-        .pill {
-            display: inline-block;
-            padding: 5px 10px;
-            margin: 2px;
-            border-radius: 16px;
-            background-color: #e0e0e0;
-            font-size: 14px;
-        }
-
         .key {
             display: inline-block;
             width: 52px;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin-top: 0;
         }
     </style>
 </head>
@@ -140,69 +140,63 @@
                 <div style="font-size: 1.5em; font-weight: bold; margin-bottom: 5px;">聂祥胜</div>
                 <div>- <span class="key">电话</span>: 18106081404</div>
                 <div>- <span class="key">邮箱</span>: sherlocknieh@gmail.com</div>
-                <div>- <span class="key">GitHub</span>: <a
+                <div>- <span class="key">GitHub</span>: <a  target="_blank"
                         href="https://github.com/sherlocknieh">github.com/sherlocknieh</a></div>
             </div>
             <div>
                 <div class="avatar"><img height="100px" src="../assets/wechat.png"></div>
             </div>
         </div>
-        <br>
+        
         <div class="section-title">教育经历</div>
         <hr>
         <div class="section-content">
-            <ul>
-            <li>
-                <span>2022.9 - 2026.6</span>
-                <span>| 厦门大学</span>
-                <span>| 计算机专业(本科)</span>
-            </li>
-            </ul>
+            <div style="display: flex; justify-content:space-between;">
+                <span>· 2022.9 - 2026.6</span>
+                <span>厦门大学</span>
+                <span>计算机专业 (本科)</span>
+            </div>
         </div>
-        <br>
+        
         <div class="section-title">项目经历</div>
         <hr>
         <div class="section-content">
             <ul class="project-list">
                 <li>
                     <strong>树莓派桌面机器人</strong>
-                    <span>简介: <code>树莓派</code> + <code>Python</code> 实现的多功能桌面机器人</span>
-                    <span>技术: <code>Eventbus</code> 多模块通信, Python 多线程, 预训练AI模型调用</span>
+                    <span>简介: 树莓派 + Python 实现的多功能桌面机器人</span>
+                    <span>技术: Eventbus 多模块通信, Python 多线程, 预训练AI模型调用</span>
                     <span>项目主页: <a href="https://github.com/sherlocknieh/DeskRobot" target="_blank">https://github.com/sherlocknieh/DeskRobot</a></span>
                 </li>
                 <li>
                     <strong>ESP32 物联网窗帘控制器</strong>
                     <span>简介: ESP32 驱动的远程窗帘控制器</span>
-                    <span>技术: <code>C++</code>, <code>ESP32</code>, <code>PlatformIO</code>, <code>Blinker</code>, <code>MQTT</code></span>
+                    <span>技术: C++, ESP32, PlatformIO, Blinker, MQTT</span>
                     <span>项目主页: <a href="https://github.com/sherlocknieh/CurtainPuller" target="_blank">https://github.com/sherlocknieh/CurtainPuller</a></span>
                 </li>
                 <li>
                     <strong>ItemCF 电影推荐系统</strong>
                     <span>简介: 基于用户的协同过滤算法和基于内容的推荐算法的电影推荐系统</span>
-                    <span>技术: <code>Python爬虫</code>, <code>Flask网页</code>, <code>SQLite储存</code>, <code>ItemCF算法</code></span>
+                    <span>技术: Python爬虫, Flask网页, SQLite储存, ItemCF算法</span>
                     <span>项目主页: <a href="https://github.com/sherlocknieh/Movie_Recommend" target="_blank">https://github.com/sherlocknieh/Movie_Recommend</a></span>
-                </li>
-                <li>
-                    <strong>Electron 邮件客户端</strong>
-                    <span>简介: Electron + Vue 实现的聚合邮件客户端</span>
-                    <span>地址: <a href="https://github.com/sherlocknieh/mail-electron" target="_blank">https://github.com/sherlocknieh/mail-electron</a></span>
                 </li>
             </ul>
         </div>
-        <br>
-        <div class="section-title">技能与兴趣</div>
+        
+        <div class="section-title">自我评价</div>
         <hr>
         <div class="section-content">
             <ul class="skill-list">
                 <li>
-                    <strong>通过系统学习，理解计算机知识体系，掌握基本编程技能：</strong>
+                    <strong>系统掌握计算机知识体系和编程技能</strong>
                     <ul>
-                        <li>硬件: 熟悉 <code>ESP32</code>、<code>树莓派</code>，能使用 <code>嘉立创EDA</code> 进行PCB设计、打板、焊接</li>
-                        <li>编程: 熟悉 <code>Python</code>、<code>C</code>、<code>C++</code>、<code>Javascript</code> 语言</li>
-                        <li>技术: 熟悉 <code>Vue</code> 前端框架、<code>Python</code> 异步爬虫、<code>Electron</code> 桌面开发</li>
-                        <li>工具: 熟悉 <code>VSCode</code>、<code>Git</code>、<code>Linux</code>、<code>GCC工具链</code>，熟悉AI编程工具</li>
-                        <li>英语: <code>CET-6 583分</code>，流畅阅读英文文档</li>
+                        <li>硬件: 熟悉 ESP32、树莓派</li>
+                        <li>软件: 熟悉 Python、C、C++、Javascript</li>
+                        <li>英语: 六级 583分, 流畅阅读英文文档</li>
                     </ul>
+                </li>
+                <li>
+                    <strong>喜欢尝试新技术, 持续学习新知识</strong>
                 </li>
                 <li>
                     <strong>乐于分享学习经验：</strong>
@@ -213,9 +207,6 @@
                 </li>
             </ul>
         </div>
-
-
-        </table> <p>具有良好的团队合作精神和沟通能力，能够快速适应新环境，乐于接受挑战，持续学习新知识。</p>
     </div>
 </body>
 
