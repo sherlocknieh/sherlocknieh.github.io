@@ -5,7 +5,12 @@
     <meta charset="UTF-8">
     <title>个人简历</title>
     <style>
-        
+        /* 调试边框 */
+        div{
+            box-sizing: border-box;
+            /* border: 1px solid lightgray; */
+        }
+
         /* 打印效果控制 */
         @media print {
 
@@ -25,6 +30,7 @@
                 margin: 0;
             }
         }
+
 
         a {
             color: #0a4b78;
@@ -60,13 +66,18 @@
             height: 100px;
             display: flex;
             justify-content: space-between;
-            flex-wrap: wrap;
+
         }
 
         .personal-info-detail {
             flex: 1;
+            height: 100%;
             margin-left: 20px;
             font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: end;
+            flex-wrap: wrap;
         }
 
         .section-title {
@@ -74,7 +85,7 @@
             font-weight: bold;
             margin-top: 18px;
             font-size: 18px;
-            background: #cbe6ff;
+            background: #edf6fb;
             padding: 4px 10px;
             border-radius: 3px;
         }
@@ -135,17 +146,17 @@
         </div>
         <hr>
         <div id="personal-info" class="section-content">
-            <div class="avatar"><img height="100px" src="../assets/avatar.jpg"></div>
+            <div class="avatar"><img height="100%" src="../assets/avatar.jpg"></div>
             <div class="personal-info-detail">
                 <div style="font-size: 1.5em; font-weight: bold; margin-bottom: 5px;">聂祥胜</div>
-                <div>- <span class="key">电话</span>: 18106081404</div>
-                <div>- <span class="key">邮箱</span>: sherlocknieh@gmail.com</div>
-                <div>- <span class="key">GitHub</span>: <a  target="_blank"
-                        href="https://github.com/sherlocknieh">github.com/sherlocknieh</a></div>
+                <div>·电话: 18106081404</div>
+                <div>·邮箱: sherlocknieh@gmail.com</div>
+                <div>·github: <a  target="_blank" href="https://github.com/sherlocknieh">github.com/sherlocknieh</a></div>
+
             </div>
-            <div>
-                <div class="avatar"><img height="100px" src="../assets/wechat.png"></div>
-            </div>
+            <div class="avatar" style="
+            border: 1px solid lightgray;"><img height="100%" src="../assets/wechat.png"></div>
+       
         </div>
         
         <div class="section-title">教育经历</div>
