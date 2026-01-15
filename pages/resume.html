@@ -5,219 +5,134 @@
     <meta charset="UTF-8">
     <title>个人简历</title>
     <style>
-        /* 调试边框 */
-        div{
-            box-sizing: border-box;
-            /* border: 1px solid lightgray; */
-        }
-
-        /* 打印效果控制 */
         @media print {
-
-            /* 使简历容器脱离文档流 */
-            .container {
+            #resume {
                 position: absolute;
                 left: 0;
                 top: 0;
             }
-            .section-title {
-                print-color-adjust: exact; /* 标准属性，Firefox */
-                -webkit-print-color-adjust: exact; /* 保持背景颜色 */
+            div[style*="background: #edf6fb"], div[style*="background: #f8f9fa"] {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
             }
-            /* A4 打印和预览样式 */
             @page {
                 size: A4;
                 margin: 0;
             }
         }
-
-
-        a {
-            color: #0a4b78;
-            text-decoration: underline;
-        }
-
-        body {
-            background-color: lightgray;
-        }
-
-        .container {
-            /* A4 纸大小 */
-            width: 210mm;
-            height: 297mm;
-            padding: 8mm 16mm;
-            margin: 0 auto;
-            border: solid 1px lightgray;
-            background: #fff;
-            box-sizing: border-box;
-            overflow: hidden;
-        }
-
-        #header {
-            font-size: 24px;
-            color: rgb(13, 47, 110);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            text-align: center;
-        }
-
-        #personal-info {
-            height: 100px;
-            display: flex;
-            justify-content: space-between;
-
-        }
-
-        .personal-info-detail {
-            flex: 1;
-            height: 100%;
-            margin-left: 20px;
-            font-size: 14px;
-            display: flex;
-            flex-direction: column;
-            justify-content: end;
-            flex-wrap: wrap;
-        }
-
-        .section-title {
-            color: black;
-            font-weight: bold;
-            margin-top: 18px;
-            font-size: 18px;
-            background: #edf6fb;
-            padding: 4px 10px;
-            border-radius: 3px;
-        }
-
-        .project-list, .skill-list {
-            list-style: disc inside;
-            padding-left: 18px;
-            margin: 0 0 10px 0;
-        }
-        .project-list > li, .skill-list > li {
-            margin-bottom: 12px;
-            font-size: 15px;
-            font-weight: normal;
-            line-height: 1.7;
-        }
-        .project-list strong, .skill-list strong {
-            font-size: 16px;
-            font-weight: bold;
-        }
-        .project-list span, .skill-list span {
-            display: block;
-            margin-left: 8px;
-            margin-bottom: 2px;
-        }
-        .project-list code, .skill-list code {
-            background: #f4f4f4;
-            border-radius: 3px;
-            padding: 1px 4px;
-            font-size: 14px;
-        }
-        .skill-list ul {
-            list-style: circle inside;
-            margin: 4px 0 0 10px;
-            padding-left: 0;
-        }
-        .skill-list ul li {
-            font-size: 14px;
-            margin-bottom: 2px;
-        }
-
-        .key {
-            display: inline-block;
-            width: 52px;
-        }
-        hr {
-            border: none;
-            border-top: 1px solid #ccc;
-            margin-top: 0;
-        }
     </style>
 </head>
 
-<body>
-    <div id="resume" class="container">
-        <div id="header">
+<body style="background-color: lightgray;">
+    <div id="resume" style="width: 210mm; height: 297mm; padding: 8mm 16mm; margin: 0 auto; border: solid 1px lightgray; background: #fff; box-sizing: border-box; overflow: hidden;">
+        <div id="header" style="font-size: 24px; color: rgb(13, 47, 110); display: flex; justify-content: space-between; align-items: center; text-align: center;">
             <div>👤个人简历</div>
             <img alt="厦门大学" height="40px" src="https://www.xmu.edu.cn/images/logo2.png">
         </div>
-        <hr>
-        <div id="personal-info" class="section-content">
-            <div class="avatar"><img height="100%" src="../assets/avatar.jpg"></div>
-            <div class="personal-info-detail">
+        <hr style="border: none; border-top: 1px solid #ccc; margin-top: 0;">
+        <div id="personal-info" style="height: 100px; display: flex; justify-content: space-between;">
+            <div style="height: 100%;"><img height="100%" src="../assets/avatar.jpg"></div>
+            
+            <div style="flex: 1; height: 100%; margin-left: 20px; font-size: 14px; display: flex; flex-direction: column; justify-content: end; flex-wrap: wrap;">
                 <div style="font-size: 1.5em; font-weight: bold; margin-bottom: 5px;">聂祥胜</div>
                 <div>·电话: 18106081404</div>
                 <div>·邮箱: sherlocknieh@gmail.com</div>
-                <div>·github: <a  target="_blank" href="https://github.com/sherlocknieh">github.com/sherlocknieh</a></div>
+                <div>·github: <a target="_blank" href="https://github.com/sherlocknieh" style="color: #0a4b78; text-decoration: underline;">github.com/sherlocknieh</a></div>
+            </div>
 
+            <div style="margin: 5px; height: 100%;">
+                <img height="100%;" src="../assets/github.png">
             </div>
-            <div class="avatar" style="
-            border: 1px solid lightgray;"><img height="100%" src="../assets/wechat.png"></div>
-       
-        </div>
-        
-        <div class="section-title">教育经历</div>
-        <hr>
-        <div class="section-content">
-            <div style="display: flex; justify-content:space-between;">
-                <span>· 2022.9 - 2026.6</span>
-                <span>厦门大学</span>
-                <span>计算机专业 (本科)</span>
+
+            <div style="margin: 5px; height: 100%;">
+                <img height="100%;" src="../assets/wechat.png">
             </div>
         </div>
         
-        <div class="section-title">项目经历</div>
-        <hr>
-        <div class="section-content">
-            <ul class="project-list">
-                <li>
-                    <strong>树莓派桌面机器人</strong>
-                    <span>简介: 树莓派 + Python 实现的多功能桌面机器人</span>
-                    <span>技术: Eventbus 多模块通信, Python 多线程, 预训练AI模型调用</span>
-                    <span>项目主页: <a href="https://github.com/sherlocknieh/DeskRobot" target="_blank">https://github.com/sherlocknieh/DeskRobot</a></span>
-                </li>
-                <li>
-                    <strong>ESP32 物联网窗帘控制器</strong>
-                    <span>简介: ESP32 驱动的远程窗帘控制器</span>
-                    <span>技术: C++, ESP32, PlatformIO, Blinker, MQTT</span>
-                    <span>项目主页: <a href="https://github.com/sherlocknieh/CurtainPuller" target="_blank">https://github.com/sherlocknieh/CurtainPuller</a></span>
-                </li>
-                <li>
-                    <strong>ItemCF 电影推荐系统</strong>
-                    <span>简介: 基于用户的协同过滤算法和基于内容的推荐算法的电影推荐系统</span>
-                    <span>技术: Python爬虫, Flask网页, SQLite储存, ItemCF算法</span>
-                    <span>项目主页: <a href="https://github.com/sherlocknieh/Movie_Recommend" target="_blank">https://github.com/sherlocknieh/Movie_Recommend</a></span>
-                </li>
-            </ul>
+        <div style="color: black; font-weight: bold; margin-top: 18px; font-size: 18px; background: #edf6fb; padding: 4px 10px; border-radius: 3px;">教育经历</div>
+        <hr style="border: none; border-top: 1px solid #ccc; margin-top: 0;">
+        <div style="display: flex; justify-content: space-between;">
+            <span>· 2022.9 - 2026.6</span>
+            <span>厦门大学</span>
+            <span>计算机科学 (本科)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <span>· 2018.9 - 2021.6</span>
+            <span>中南大学</span>
+            <span>计算数学 (本科肄业)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <span>· 2014.9 - 2017.6</span>
+            <span>四川大学</span>
+            <span>材料物理 (本科肄业)</span>
         </div>
         
-        <div class="section-title">自我评价</div>
-        <hr>
-        <div class="section-content">
-            <ul class="skill-list">
-                <li>
-                    <strong>系统掌握计算机知识体系和编程技能</strong>
-                    <ul>
-                        <li>硬件: 熟悉 ESP32、树莓派</li>
-                        <li>软件: 熟悉 Python、C、C++、Javascript</li>
-                        <li>英语: 六级 583分, 流畅阅读英文文档</li>
-                    </ul>
-                </li>
-                <li>
-                    <strong>喜欢尝试新技术, 持续学习新知识</strong>
-                </li>
-                <li>
-                    <strong>乐于分享学习经验：</strong>
-                    <ul>
-                        <li><a href="https://zhuanlan.zhihu.com/p/661673949" target="_blank">世界上最简单的 KMP 算法解释</a></li>
-                        <li><a href="https://zhuanlan.zhihu.com/p/641614164" target="_blank">一篇文章, 解决你对多元函数的一切疑惑</a></li>
-                    </ul>
-                </li>
-            </ul>
+        <div style="color: black; font-weight: bold; margin-top: 18px; font-size: 18px; background: #edf6fb; padding: 4px 10px; border-radius: 3px;">项目经历</div>
+        <hr style="border: none; border-top: 1px solid #ccc; margin-top: 0;">
+        <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; color: #0a4b78; padding: 8px 18px; background: #f8f9fa; margin-bottom: 8px;">
+            <span style="flex: 1;">项目名称</span>
+            <span style="flex: 1; text-align: center;">技术</span>
+            <span style="flex: 0.5; text-align: right;">时间</span>
         </div>
+        <div style="margin-bottom: 12px; font-size: 15px; font-weight: normal; line-height: 1.7;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <strong style="font-size: 16px; font-weight: bold; color: #0a4b78; flex: 1;">· TodoHeap 任务堆</strong>
+                <span style="font-size: 14px; color: #666; flex: 1; text-align: center;">Vue前端, Supabase后端, AI大模型</span>
+                <span style="font-size: 14px; color: #666; flex: 0.5; text-align: right;">2025.12 - 2026.01</span>
+            </div>
+            <span style="display: block; margin-left: 18px; margin-bottom: 2px; font-size: 14px;">简介: 一款支持AI分解任务的智能任务清单应用</span>
+            <span style="display: block; margin-left: 18px; margin-bottom: 2px; font-size: 14px;">项目主页: <a href="https://sherlocknieh.github.io/TodoHeap/" target="_blank" style="color: #0a4b78; text-decoration: underline;">https://sherlocknieh.github.io/TodoHeap/</a></span>
+        </div>
+        <div style="margin-bottom: 12px; font-size: 15px; font-weight: normal; line-height: 1.7;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <strong style="font-size: 16px; font-weight: bold; color: #0a4b78; flex: 1;">· 树莓派AI对话机器人</strong>
+                <span style="font-size: 14px; color: #666; flex: 1; text-align: center;">, Python 多线程, Opencv预训练模型, Eventbus 多模块通信, PID运动控制</span>
+                <span style="font-size: 14px; color: #666; flex: 0.5; text-align: right;">2025.05 - 2025.07</span>
+            </div>
+            <span style="display: block; margin-left: 18px; margin-bottom: 2px; font-size: 14px;">简介: 树莓派 + Python 实现的多功能桌面机器人</span>
+            <span style="display: block; margin-left: 18px; margin-bottom: 2px; font-size: 14px;">项目主页: <a href="https://github.com/sherlocknieh/DeskRobot" target="_blank" style="color: #0a4b78; text-decoration: underline;">https://github.com/sherlocknieh/DeskRobot</a></span>
+        </div>
+        <div style="margin-bottom: 12px; font-size: 15px; font-weight: normal; line-height: 1.7;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <strong style="font-size: 16px; font-weight: bold; color: #0a4b78; flex: 1;">· ItemCF 电影推荐系统</strong>
+                <span style="font-size: 14px; color: #666; flex: 1; text-align: center;">Python爬虫, Flask网页, SQLite储存, ItemCF算法</span>
+                <span style="font-size: 14px; color: #666; flex: 0.5; text-align: right;">2024.12 - 2024.12</span>
+            </div>
+            <span style="display: block; margin-left: 18px; margin-bottom: 2px; font-size: 14px;">简介: 基于用户的协同过滤算法和基于内容的推荐算法的电影推荐系统</span>
+            <span style="display: block; margin-left: 18px; margin-bottom: 2px; font-size: 14px;">项目主页: <a href="https://github.com/sherlocknieh/Movie_Recommend" target="_blank" style="color: #0a4b78; text-decoration: underline;">https://github.com/sherlocknieh/Movie_Recommend</a></span>
+        </div>
+        <div style="margin-bottom: 12px; font-size: 15px; font-weight: normal; line-height: 1.7;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <strong style="font-size: 16px; font-weight: bold; color: #0a4b78; flex: 1;">· ESP32 物联网窗帘控制器</strong>
+                <span style="font-size: 14px; color: #666; flex: 1; text-align: center;">C++, ESP32, PlatformIO, Blinker, MQTT</span>
+                <span style="font-size: 14px; color: #666; flex: 0.5; text-align: right;">2024.11 - 2024.12</span>
+            </div>
+            <span style="display: block; margin-left: 18px; margin-bottom: 2px; font-size: 14px;">简介: ESP32 驱动的远程窗帘控制器</span>
+            <span style="display: block; margin-left: 18px; margin-bottom: 2px; font-size: 14px;">项目主页: <a href="https://github.com/Xe111/CurtainPuller" target="_blank" style="color: #0a4b78; text-decoration: underline;">https://github.com/Xe111/CurtainPuller</a></span>
+        </div>
+        
+        <div style="color: black; font-weight: bold; margin-top: 18px; font-size: 18px; background: #edf6fb; padding: 4px 10px; border-radius: 3px;">自我评价</div>
+        <hr style="border: none; border-top: 1px solid #ccc; margin-top: 0;">
+        <ul style="list-style: disc inside; padding-left: 18px; margin: 0 0 10px 0;">
+            <li style="margin-bottom: 12px; font-size: 15px; font-weight: normal; line-height: 1.7;">
+                <strong style="font-size: 16px; font-weight: bold; color: #0a4b78;">系统掌握计算机知识体系和编程技能</strong>
+                <ul style="list-style: circle inside; margin: 4px 0 0 10px; padding-left: 0;">
+                    <li style="font-size: 14px; margin-bottom: 2px;">硬件: 熟悉 ESP32、树莓派、Arduino 等嵌入式开发板</li>
+                    <li style="font-size: 14px; margin-bottom: 2px;">软件: 熟悉 WEB前后端、Python、C、C++</li>
+                    <li style="font-size: 14px; margin-bottom: 2px;">英语: CET-6 (583分), 流畅阅读英文文档</li>
+                </ul>
+            </li>
+            <li style="margin-bottom: 12px; font-size: 15px; font-weight: normal; line-height: 1.7;">
+                <strong style="font-size: 16px; font-weight: bold; color: #0a4b78;">喜欢尝试新技术, 持续学习新知识</strong>
+            </li>
+            <li style="margin-bottom: 12px; font-size: 15px; font-weight: normal; line-height: 1.7;">
+                <strong style="font-size: 16px; font-weight: bold; color: #0a4b78;">乐于分享编程和数学的学习经验</strong>
+                <ul style="list-style: circle inside; margin: 4px 0 0 10px; padding-left: 0;">
+                    <li style="font-size: 14px; margin-bottom: 2px;"><a href="https://zhuanlan.zhihu.com/p/661673949" target="_blank" style="color: #0a4b78; text-decoration: underline;">世界上最简单的 KMP 算法解释 - 知乎</a></li>
+                    <li style="font-size: 14px; margin-bottom: 2px;"><a href="https://zhuanlan.zhihu.com/p/641614164" target="_blank" style="color: #0a4b78; text-decoration: underline;">一篇文章, 解决你对多元函数的一切疑惑 - 知乎</a></li>
+                </ul>
+            </li>
+        </ul>
     </div>
 </body>
 
