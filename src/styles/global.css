@@ -269,6 +269,12 @@ main {
 .footer-stack {
   display: inline-flex;
   align-items: center;
+  gap: 0.6rem;
+}
+
+.footer-label {
+  color: var(--muted);
+  opacity: 0.7;
 }
 
 .footer-stack a {
@@ -277,7 +283,6 @@ main {
 }
 
 .footer-stack a + a {
-  margin-left: 0.6rem;
   padding-left: 0.6rem;
   border-left: 1px solid var(--line-strong);
 }
