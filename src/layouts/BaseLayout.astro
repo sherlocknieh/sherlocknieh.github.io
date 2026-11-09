@@ -50,8 +50,14 @@ const { title, description = 'Sherlock Nieh 的作品集导航', nav } = Astro.p
     </main>
 
     <footer class="site-footer">
-      © {new Date().getFullYear()} sherlocknieh ·
-      <a href="https://reactflow.dev" target="_blank" rel="noopener noreferrer">React Flow</a>
+      <span>© {new Date().getFullYear()} sherlocknieh</span>
+      <span class="footer-stack">
+        <a href="https://astro.build" target="_blank" rel="noopener noreferrer">Astro</a>
+        <a href="https://reactflow.dev" target="_blank" rel="noopener noreferrer">React Flow</a>
+        <a href="https://www.typescriptlang.org" target="_blank" rel="noopener noreferrer">
+          TypeScript
+        </a>
+      </span>
     </footer>
   </body>
 </html>

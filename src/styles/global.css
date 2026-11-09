@@ -253,6 +253,11 @@ main {
 }
 
 .site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem 1rem;
   padding: 1.4rem 1.25rem;
   border-top: 1px solid var(--line);
   color: var(--muted);
@@ -260,10 +265,25 @@ main {
   text-align: center;
 }
 
-.site-footer a {
+/* 技术栈署名: 与版权信息同排, 用细分隔线区分每一项 */
+.footer-stack {
+  display: inline-flex;
+  align-items: center;
+}
+
+.footer-stack a {
   color: var(--muted);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  transition: color 0.16s ease;
+}
+
+.footer-stack a + a {
+  margin-left: 0.6rem;
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--line-strong);
+}
+
+.footer-stack a:hover {
+  color: var(--accent);
 }
 
 :focus-visible {
