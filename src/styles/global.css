@@ -256,16 +256,15 @@ main {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 0.4rem 1rem;
   padding: 1.4rem 1.25rem;
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 0.75rem;
-  text-align: center;
 }
 
-/* 技术栈署名: 与版权信息同排, 用细分隔线区分每一项 */
+/* 技术栈署名: 靠右成组, 用细分隔线区分每一项 */
 .footer-stack {
   display: inline-flex;
   align-items: center;
