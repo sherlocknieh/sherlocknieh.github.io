@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { formatDate } from '../../lib/format';
+
+const posts = (await getCollection('posts')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+---
+
+<BaseLayout title="文章 · Sherlock Nieh" nav="posts">
+  <div class="content">
+    <h1 class="page-title">文章</h1>
+    <p class="page-subtitle">共 {posts.length} 篇</p>
+    <ul class="post-list">
+      {
+        posts.map((post) => (
+          <li class="post-item">
+            <a href={`/posts/${post.id}`}>
+              <span class="post-item-title">{post.data.title}</span>
+              <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</BaseLayout>

@@ -1,0 +1,68 @@
+---
+import '@xyflow/react/dist/style.css';
+import '../styles/graph.css';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import NodeGraph from '../components/NodeGraph';
+import { getCollection } from 'astro:content';
+import { buildGraph } from '../lib/graph-layout';
+import { GROUPS, type GraphEntry } from '../lib/graph';
+import { formatDate } from '../lib/format';
+
+const posts = (await getCollection('posts')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+
+const entries: GraphEntry[] = [
+  ...projects.map((project) => ({
+    id: `project-${project.id}`,
+    group: 'projects' as const,
+    label: project.data.title,
+    href: project.data.href,
+    meta: project.data.tags.join(' · '),
+    external: true,
+  })),
+  ...posts.map((post) => ({
+    id: `post-${post.id}`,
+    group: 'writing' as const,
+    label: post.data.title,
+    href: `/posts/${post.id}`,
+    meta: formatDate(post.data.date),
+  })),
+  {
+    id: 'about-resume',
+    group: 'about' as const,
+    label: '个人简历',
+    href: '/resume',
+    meta: 'A4 打印版',
+  },
+];
+
+const model = buildGraph(entries);
+const profile = { name: 'Sherlock Nieh', role: '作品集导航', avatar: '/assets/avatar.jpg' };
+---
+
+<BaseLayout title="Sherlock Nieh · 作品集导航">
+  <NodeGraph client:load model={model} profile={profile} />
+
+  <noscript>
+    <nav class="no-script-nav">
+      {
+        GROUPS.map((group) => (
+          <section>
+            <h2>{group.label}</h2>
+            <ul>
+              {entries
+                .filter((entry) => entry.group === group.id)
+                .map((entry) => (
+                  <li>
+                    <a href={entry.href}>{entry.label}</a>
+                  </li>
+                ))}
+            </ul>
+          </section>
+        ))
+      }
+    </nav>
+  </noscript>
+</BaseLayout>

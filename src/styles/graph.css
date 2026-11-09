@@ -1,0 +1,269 @@
+/* 节点图: 画布容器占满主体区域, React Flow 需要显式高度 */
+.graph-shell {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 520px;
+}
+
+/* React Flow 自身不带尺寸, 由容器铺满, 避免百分比高度退化 */
+.graph-shell > .graph-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* 折叠与聚焦只改透明度, 不触发重新布局, 节点位置因此始终稳定 */
+.react-flow__node {
+  transition: opacity 240ms ease;
+}
+
+.react-flow__node.is-collapsed {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.react-flow__node.is-dimmed {
+  opacity: 0.3;
+}
+
+.react-flow__edge {
+  transition: opacity 240ms ease;
+}
+
+.react-flow__edge.is-collapsed {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.react-flow__edge.is-dimmed {
+  opacity: 0.22;
+}
+
+.react-flow__edge-path {
+  stroke: var(--line-strong);
+  stroke-width: 1.4;
+}
+
+.react-flow__edge.is-revealed .react-flow__edge-path {
+  stroke: rgba(94, 234, 212, 0.42);
+}
+
+/* 连接点只用于连线的锚定位, 不提供交互 */
+.node-handle {
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 节点可选中才能接收点击, 但选中态不参与视觉 */
+.react-flow__node.selected {
+  outline: none;
+}
+
+.node-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: transform 240ms ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.react-flow__node.is-collapsed .node-card {
+  transform: translateX(-16px) scale(0.94);
+}
+
+.react-flow__node.is-revealed .node-card {
+  transform: none;
+}
+
+.node-card:hover {
+  border-color: var(--accent);
+}
+
+.node-card--root {
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 14px;
+  border-radius: 22px;
+  background: radial-gradient(circle at 50% 0%, rgba(94, 234, 212, 0.1), var(--surface) 68%);
+}
+
+.node-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--line-strong);
+}
+
+.node-name {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.node-role {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.node-card--group {
+  justify-content: flex-start;
+  padding: 0 12px 0 16px;
+}
+
+.node-group-label {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.node-badge {
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.node-toggle {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+}
+
+.node-card--group.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.node-card--group.is-active .node-badge {
+  background: rgba(94, 234, 212, 0.18);
+  color: var(--accent);
+}
+
+.node-card--group.is-active .node-toggle {
+  background: rgba(94, 234, 212, 0.18);
+  color: var(--accent);
+}
+
+.node-card--leaf {
+  padding: 9px 14px;
+}
+
+.node-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+.node-leaf-label {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.node-leaf-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* 画布控件与提示 */
+.react-flow__controls {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.react-flow__controls-button {
+  width: 26px;
+  height: 26px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  fill: var(--text);
+}
+
+.react-flow__controls-button:hover {
+  background: var(--bg-soft);
+}
+
+.graph-hint {
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(15, 20, 29, 0.82);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.graph-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.graph-reset:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 无脚本时展示同源内容的清单式导航 */
+.no-script-nav {
+  max-width: 640px;
+  margin: 3rem auto;
+  padding: 0 1.25rem;
+}
+
+.no-script-nav ul {
+  padding-left: 1.1rem;
+  color: var(--muted);
+}
+
+.no-script-nav a {
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__node,
+  .react-flow__edge,
+  .node-card {
+    transition: none;
+  }
+}

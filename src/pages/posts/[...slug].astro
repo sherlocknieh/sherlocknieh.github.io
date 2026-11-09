@@ -1,0 +1,86 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+import { formatDate } from '../../lib/format';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const { title, date, description, math, mermaid } = post.data;
+---
+
+<BaseLayout title={`${title} · Sherlock Nieh`} description={description} nav="posts">
+  <div class="content">
+    <a class="back-link" href="/posts">
+      <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">
+        <path
+          d="M9.5 3.5 5 8l4.5 4.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"></path>
+      </svg>
+      文章
+    </a>
+    <h1 class="page-title">{title}</h1>
+    <p class="page-subtitle">
+      <time datetime={date.toISOString()}>{formatDate(date)}</time>
+    </p>
+    <article class="prose">
+      <Content />
+    </article>
+  </div>
+
+  {
+    math && (
+      <Fragment>
+        <script is:inline>
+          window.MathJax = {
+            tex: {
+              inlineMath: [
+                ['$', '$'],
+                ['\\(', '\\)'],
+              ],
+              displayMath: [
+                ['$$', '$$'],
+                ['\\[', '\\]'],
+              ],
+            },
+          };
+        </script>
+        <script
+          is:inline
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+          async></script>
+      </Fragment>
+    )
+  }
+
+  {
+    mermaid && (
+      <script is:inline type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+        mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+
+        const blocks = document.querySelectorAll('pre[data-language="mermaid"]');
+        const holders = [];
+        for (const block of blocks) {
+          const holder = document.createElement('div');
+          holder.className = 'mermaid';
+          holder.textContent = block.textContent ?? '';
+          block.replaceWith(holder);
+          holders.push(holder);
+        }
+        if (holders.length > 0) {
+          await mermaid.run({ nodes: holders });
+        }
+      </script>
+    )
+  }
+</BaseLayout>

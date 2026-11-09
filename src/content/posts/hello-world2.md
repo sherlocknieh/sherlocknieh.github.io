@@ -1,9 +1,9 @@
 ---
-layout: default
-title: "图表测试"
+title: 图表测试
+date: 2025-09-23
+description: Mermaid 流程图渲染验证
+mermaid: true
 ---
-
-# 图表测试
 
 ```mermaid
 graph TD

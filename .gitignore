@@ -1,11 +1,7 @@
-# Jekyll 构建输出
-_site/
-.sass-cache/
-.jekyll-cache/
-.jekyll-metadata
-
-# Ruby 依赖管理
-Gemfile.lock
+# 依赖与构建产物
+node_modules/
+dist/
+.astro/
 
 # 系统文件
 .DS_Store
@@ -24,3 +20,7 @@ Thumbs.db
 # 临时文件
 *.tmp
 *.temp
+
+# 环境变量
+.env
+.env.*

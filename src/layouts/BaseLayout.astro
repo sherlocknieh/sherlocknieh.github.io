@@ -1,0 +1,56 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** 当前页面对应的导航项, 用于高亮 */
+  nav?: 'posts' | 'resume';
+}
+
+const { title, description = 'Sherlock Nieh 的作品集导航', nav } = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/assets/avatar.jpg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+  </head>
+
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/">
+        <img src="/assets/avatar.jpg" alt="" width="26" height="26" />
+        <span>sherlocknieh</span>
+      </a>
+      <nav class="site-nav">
+        <a href="/posts" aria-current={nav === 'posts' ? 'page' : undefined}>文章</a>
+        <a href="/resume" aria-current={nav === 'resume' ? 'page' : undefined}>简历</a>
+        <a href="https://github.com/sherlocknieh" target="_blank" rel="noopener noreferrer">
+          GitHub
+          <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true" focusable="false">
+            <path
+              d="M6 3.5h6.5V10M12.5 3.5 6.5 9.5M10 12.5H4.5a1 1 0 0 1-1-1V6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"></path>
+          </svg>
+        </a>
+      </nav>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      © {new Date().getFullYear()} sherlocknieh
+    </footer>
+  </body>
+</html>
