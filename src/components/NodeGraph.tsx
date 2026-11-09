@@ -10,7 +10,6 @@ import {
 import {
   Background,
   BackgroundVariant,
-  Controls,
   Handle,
   Panel,
   Position,
@@ -349,9 +348,9 @@ function GraphCanvas({ model, profile }: { model: GraphModel; profile: GraphProf
             minZoom={0.2}
             maxZoom={1.6}
             onPaneClick={reset}
+            proOptions={{ hideAttribution: true }}
           >
             <Background variant={BackgroundVariant.Dots} gap={22} size={1} />
-            <Controls showInteractive={false} position="bottom-right" />
             {focused && (
               <Panel position="top-right">
                 <button type="button" className="graph-reset" onClick={reset}>
@@ -360,9 +359,6 @@ function GraphCanvas({ model, profile }: { model: GraphModel; profile: GraphProf
                 </button>
               </Panel>
             )}
-            <Panel position="bottom-left" className="graph-hint">
-              点击分组展开 · 拖动平移 · 滚轮缩放
-            </Panel>
           </ReactFlow>
         </div>
       </div>

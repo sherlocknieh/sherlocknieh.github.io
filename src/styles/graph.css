@@ -200,36 +200,6 @@
   color: var(--muted);
 }
 
-/* 画布控件与提示 */
-.react-flow__controls {
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  box-shadow: none;
-}
-
-.react-flow__controls-button {
-  width: 26px;
-  height: 26px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  color: var(--text);
-  fill: var(--text);
-}
-
-.react-flow__controls-button:hover {
-  background: var(--bg-soft);
-}
-
-.graph-hint {
-  padding: 5px 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(15, 20, 29, 0.82);
-  color: var(--muted);
-  font-size: 11px;
-}
-
 .graph-reset {
   display: inline-flex;
   align-items: center;
