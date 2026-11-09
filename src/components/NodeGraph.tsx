@@ -147,7 +147,7 @@ function LeafNode({ data }: NodeProps) {
   const d = data as unknown as LeafData;
 
   return (
-    <div className="node-card node-card--leaf">
+    <div className="node-card node-card--leaf" inert={!d.revealed}>
       <Handle type="target" position={Position.Left} className="node-handle" isConnectable={false} />
       <a
         className="node-link"
@@ -289,7 +289,12 @@ function GraphCanvas({ model, profile }: { model: GraphModel; profile: GraphProf
           id: leaf.entry.id,
           type: 'leaf',
           position: { x: leafRect.x, y: leafRect.y },
-          style: { width: leafRect.width, height: leafRect.height },
+          style: {
+            width: leafRect.width,
+            height: leafRect.height,
+            // 折叠时必须用行内样式关掉命中测试: React Flow 会给可选中节点写 pointer-events: all
+            pointerEvents: active ? 'all' : 'none',
+          },
           data: {
             kind: 'leaf',
             label: leaf.entry.label,

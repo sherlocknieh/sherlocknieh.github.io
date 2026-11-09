@@ -35,6 +35,12 @@
   pointer-events: none;
 }
 
+/* 折叠分支的连线不参与命中测试, 否则会挡住画布的点击 */
+.react-flow__edge.is-collapsed .react-flow__edge-interaction,
+.react-flow__edge.is-collapsed .react-flow__edge-path {
+  pointer-events: none;
+}
+
 .react-flow__edge.is-dimmed {
   opacity: 0.22;
 }
