@@ -124,6 +124,19 @@
   padding: 0 12px 0 16px;
 }
 
+/* 分类节点比分组低一级, 用更紧凑的排版和更暗的底色区分层级 */
+.node-card--section {
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0 10px 0 14px;
+  background: var(--bg-soft);
+}
+
+.node-card--section .node-group-label {
+  font-size: 13.5px;
+  font-weight: 550;
+}
+
 .node-group-label {
   font-size: 15px;
   font-weight: 600;
@@ -150,17 +163,17 @@
   color: var(--muted);
 }
 
-.node-card--group.is-active {
+.node-card.is-active {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
 
-.node-card--group.is-active .node-badge {
+.node-card.is-active .node-badge {
   background: rgba(94, 234, 212, 0.18);
   color: var(--accent);
 }
 
-.node-card--group.is-active .node-toggle {
+.node-card.is-active .node-toggle {
   background: rgba(94, 234, 212, 0.18);
   color: var(--accent);
 }

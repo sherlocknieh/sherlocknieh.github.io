@@ -22,12 +22,13 @@ import {
 } from '@xyflow/react';
 import {
   NODE_SIZE,
+  buildGraph,
   rectOf,
   unionRect,
-  type GraphModel,
+  type LaidOutLeaf,
   type Rect,
 } from '../lib/graph-layout';
-import type { GroupId } from '../lib/graph';
+import type { GraphEntry, GroupId } from '../lib/graph';
 
 export interface GraphProfile {
   name: string;
@@ -41,8 +42,11 @@ interface RootData extends Record<string, unknown> {
 }
 
 interface GroupData extends Record<string, unknown> {
-  kind: 'group';
-  id: GroupId;
+  kind: 'group' | 'section';
+  /** 分组 id 或分类 id */
+  id: string;
+  /** 分类所属的分组, 分组节点填自身 id */
+  owner: GroupId;
   label: string;
   hint: string;
   count: number;
@@ -60,13 +64,18 @@ interface LeafData extends Record<string, unknown> {
 
 type FlowNode = Node<RootData | GroupData | LeafData>;
 
+/** 聚焦状态: 只选分组时展示分类, 再选分类时展示该分类的叶子 */
+type Focus = { group: GroupId; section?: string };
+
 /** 节点卡片通过 context 改画布状态, 避免把回调塞进可序列化的 data 里 */
 const GraphInteraction = createContext<{
   toggleGroup: (id: GroupId) => void;
+  toggleSection: (group: GroupId, section: string) => void;
   reset: () => void;
-}>({ toggleGroup: () => {}, reset: () => {} });
+}>({ toggleGroup: () => {}, toggleSection: () => {}, reset: () => {} });
 
 const groupNodeId = (id: GroupId) => `group-${id}`;
+const sectionNodeId = (group: GroupId, section: string) => `section-${group}-${section}`;
 
 const ExternalIcon = () => (
   <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true" focusable="false">
@@ -118,13 +127,14 @@ function RootNode({ data }: NodeProps) {
 
 function GroupNode({ data }: NodeProps) {
   const d = data as unknown as GroupData;
-  const { toggleGroup } = useContext(GraphInteraction);
+  const { toggleGroup, toggleSection } = useContext(GraphInteraction);
+  const isSection = d.kind === 'section';
 
   return (
     <button
       type="button"
-      className={`node-card node-card--group${d.active ? ' is-active' : ''}`}
-      onClick={() => toggleGroup(d.id)}
+      className={`node-card node-card--${d.kind}${d.active ? ' is-active' : ''}`}
+      onClick={() => (isSection ? toggleSection(d.owner, d.id) : toggleGroup(d.owner))}
       aria-expanded={d.active}
       title={d.hint}
     >
@@ -164,18 +174,30 @@ function LeafNode({ data }: NodeProps) {
 
 const nodeTypes = { root: RootNode, category: GroupNode, leaf: LeafNode };
 
-function GraphCanvas({ model, profile }: { model: GraphModel; profile: GraphProfile }) {
-  const [focused, setFocused] = useState<GroupId | null>(null);
+function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: GraphProfile }) {
+  const [focus, setFocus] = useState<Focus | null>(null);
   const [resizeTick, setResizeTick] = useState(0);
   const canvasRef = useRef<HTMLDivElement>(null);
   const didInit = useRef(false);
   const { setViewport } = useReactFlow();
 
+  // 只有当前聚焦的分支展开, 其余分组收成一个节点, 总览因此始终紧凑
+  const model = useMemo(
+    () => buildGraph(entries, focus ? { group: focus.group, section: focus.section } : undefined),
+    [entries, focus],
+  );
+
   const toggleGroup = useCallback((id: GroupId) => {
-    setFocused((current) => (current === id ? null : id));
+    setFocus((current) => (current?.group === id && !current.section ? null : { group: id }));
   }, []);
 
-  const reset = useCallback(() => setFocused(null), []);
+  const toggleSection = useCallback((group: GroupId, section: string) => {
+    setFocus((current) =>
+      current?.group === group && current.section === section ? { group } : { group, section },
+    );
+  }, []);
+
+  const reset = useCallback(() => setFocus(null), []);
 
   /** 全部节点的画布矩形, 视口计算只依赖它, 不读浏览器测量值 */
   const rects = useMemo(() => {
@@ -186,18 +208,42 @@ function GraphCanvas({ model, profile }: { model: GraphModel; profile: GraphProf
       for (const leaf of group.leaves) {
         map.set(leaf.entry.id, rectOf(leaf.center, NODE_SIZE.leaf));
       }
+      for (const section of group.sections) {
+        map.set(
+          sectionNodeId(group.meta.id, section.meta.id),
+          rectOf(section.center, NODE_SIZE.section),
+        );
+        for (const leaf of section.leaves) {
+          map.set(leaf.entry.id, rectOf(leaf.center, NODE_SIZE.leaf));
+        }
+      }
     }
     return map;
   }, [model]);
 
-  /** 总览只看根与分组; 聚焦时把该分组的全部叶子纳入视野 */
+  /** 总览只看根与分组; 聚焦分组看分类, 再聚焦分类才看它的叶子 */
   const visibleIds = useMemo(() => {
-    if (focused) {
-      const group = model.groups.find((item) => item.meta.id === focused);
-      return [groupNodeId(focused), ...(group?.leaves.map((leaf) => leaf.entry.id) ?? [])];
+    if (!focus) return ['root', ...model.groups.map((group) => groupNodeId(group.meta.id))];
+
+    const group = model.groups.find((item) => item.meta.id === focus.group);
+    if (!group) return ['root'];
+
+    const groupId = groupNodeId(focus.group);
+    if (!focus.section) {
+      return [
+        groupId,
+        ...group.sections.map((section) => sectionNodeId(focus.group, section.meta.id)),
+        ...group.leaves.map((leaf) => leaf.entry.id),
+      ];
     }
-    return ['root', ...model.groups.map((group) => groupNodeId(group.meta.id))];
-  }, [focused, model]);
+
+    const section = group.sections.find((item) => item.meta.id === focus.section);
+    return [
+      groupId,
+      sectionNodeId(focus.group, focus.section),
+      ...(section?.leaves.map((leaf) => leaf.entry.id) ?? []),
+    ];
+  }, [focus, model]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -256,10 +302,41 @@ function GraphCanvas({ model, profile }: { model: GraphModel; profile: GraphProf
       },
     ];
 
+    /** 叶子在被当前聚焦路径展开时才能点击, 折叠态直接退出命中测试 */
+    const pushLeaf = (leaf: LaidOutLeaf, revealed: boolean) => {
+      const leafRect = rects.get(leaf.entry.id)!;
+      list.push({
+        id: leaf.entry.id,
+        type: 'leaf',
+        position: { x: leafRect.x, y: leafRect.y },
+        style: {
+          width: leafRect.width,
+          height: leafRect.height,
+          // 折叠时必须用行内样式关掉命中测试: React Flow 会给可选中节点写 pointer-events: all
+          pointerEvents: revealed ? 'all' : 'none',
+        },
+        data: {
+          kind: 'leaf',
+          label: leaf.entry.label,
+          href: leaf.entry.href,
+          meta: leaf.entry.meta,
+          external: leaf.entry.external,
+          revealed,
+        },
+        className: revealed ? 'is-revealed' : 'is-collapsed',
+        draggable: false,
+      });
+    };
+
     for (const group of model.groups) {
-      const id = groupNodeId(group.meta.id);
+      const gid = group.meta.id;
+      const id = groupNodeId(gid);
       const rect = rects.get(id)!;
-      const active = focused === group.meta.id;
+      const active = focus?.group === gid;
+      const dimmed = focus !== null && !active;
+      const leafCount =
+        group.leaves.length +
+        group.sections.reduce((sum, section) => sum + section.leaves.length, 0);
 
       list.push({
         id,
@@ -268,69 +345,98 @@ function GraphCanvas({ model, profile }: { model: GraphModel; profile: GraphProf
         style: { width: rect.width, height: rect.height },
         data: {
           kind: 'group',
-          id: group.meta.id,
+          id: gid,
+          owner: gid,
           label: group.meta.label,
           hint: group.meta.hint,
-          count: group.leaves.length,
+          count: leafCount,
           active,
         },
-        className: focused && !active ? 'is-dimmed' : undefined,
+        className: dimmed ? 'is-dimmed' : undefined,
         draggable: false,
       });
 
-      for (const leaf of group.leaves) {
-        const leafRect = rects.get(leaf.entry.id)!;
+      for (const section of group.sections) {
+        const sid = sectionNodeId(gid, section.meta.id);
+        const sectionRect = rects.get(sid)!;
+        const sectionActive = active && focus?.section === section.meta.id;
+
         list.push({
-          id: leaf.entry.id,
-          type: 'leaf',
-          position: { x: leafRect.x, y: leafRect.y },
+          id: sid,
+          type: 'category',
+          position: { x: sectionRect.x, y: sectionRect.y },
           style: {
-            width: leafRect.width,
-            height: leafRect.height,
-            // 折叠时必须用行内样式关掉命中测试: React Flow 会给可选中节点写 pointer-events: all
+            width: sectionRect.width,
+            height: sectionRect.height,
             pointerEvents: active ? 'all' : 'none',
           },
           data: {
-            kind: 'leaf',
-            label: leaf.entry.label,
-            href: leaf.entry.href,
-            meta: leaf.entry.meta,
-            external: leaf.entry.external,
-            revealed: active,
+            kind: 'section',
+            id: section.meta.id,
+            owner: gid,
+            label: section.meta.label,
+            hint: `${group.meta.label} · ${section.meta.label}`,
+            count: section.leaves.length,
+            active: sectionActive,
           },
           className: active ? 'is-revealed' : 'is-collapsed',
           draggable: false,
         });
+
+        for (const leaf of section.leaves) pushLeaf(leaf, sectionActive);
       }
+
+      for (const leaf of group.leaves) pushLeaf(leaf, active);
     }
 
     return list;
-  }, [focused, model, profile, rects]);
+  }, [focus, model, profile, rects]);
 
   const edges = useMemo<Edge[]>(() => {
     const list: Edge[] = [];
-    for (const group of model.groups) {
-      const active = focused === group.meta.id;
+
+    const pushLeafEdge = (source: string, entryId: string, revealed: boolean) => {
       list.push({
-        id: `edge-root-${group.meta.id}`,
-        source: 'root',
-        target: groupNodeId(group.meta.id),
-        className: focused && !active ? 'is-dimmed' : undefined,
+        id: `edge-${entryId}`,
+        source,
+        target: entryId,
+        className: revealed ? 'is-revealed' : 'is-collapsed',
       });
-      for (const leaf of group.leaves) {
+    };
+
+    for (const group of model.groups) {
+      const gid = group.meta.id;
+      const active = focus?.group === gid;
+      const dimmed = focus !== null && !active;
+
+      list.push({
+        id: `edge-root-${gid}`,
+        source: 'root',
+        target: groupNodeId(gid),
+        className: dimmed ? 'is-dimmed' : undefined,
+      });
+
+      for (const section of group.sections) {
+        const sid = sectionNodeId(gid, section.meta.id);
         list.push({
-          id: `edge-${leaf.entry.id}`,
-          source: groupNodeId(group.meta.id),
-          target: leaf.entry.id,
+          id: `edge-${sid}`,
+          source: groupNodeId(gid),
+          target: sid,
           className: active ? 'is-revealed' : 'is-collapsed',
         });
+
+        const sectionActive = active && focus?.section === section.meta.id;
+        for (const leaf of section.leaves) pushLeafEdge(sid, leaf.entry.id, sectionActive);
       }
+
+      for (const leaf of group.leaves) pushLeafEdge(groupNodeId(gid), leaf.entry.id, active);
     }
+
     return list;
-  }, [focused, model]);
+  }, [focus, model]);
 
   return (
-    <GraphInteraction.Provider value={{ toggleGroup, reset }}>
+    <GraphInteraction.Provider value={{ toggleGroup, toggleSection, reset }}>
       <div className="graph-shell">
         <div className="graph-canvas" ref={canvasRef}>
           <ReactFlow
@@ -347,7 +453,7 @@ function GraphCanvas({ model, profile }: { model: GraphModel; profile: GraphProf
             proOptions={{ hideAttribution: true }}
           >
             <Background variant={BackgroundVariant.Dots} gap={22} size={1} />
-            {focused && (
+            {focus && (
               <Panel position="top-right">
                 <button type="button" className="graph-reset" onClick={reset}>
                   <ResetIcon />
@@ -362,10 +468,10 @@ function GraphCanvas({ model, profile }: { model: GraphModel; profile: GraphProf
   );
 }
 
-export default function NodeGraph(props: { model: GraphModel; profile: GraphProfile }) {
+export default function NodeGraph(props: { entries: GraphEntry[]; profile: GraphProfile }) {
   return (
     <ReactFlowProvider>
-      <GraphCanvas model={props.model} profile={props.profile} />
+      <GraphCanvas entries={props.entries} profile={props.profile} />
     </ReactFlowProvider>
   );
 }

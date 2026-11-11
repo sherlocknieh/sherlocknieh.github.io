@@ -4,19 +4,23 @@ import '../styles/graph.css';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import NodeGraph from '../components/NodeGraph';
 import { getCollection } from 'astro:content';
-import { buildGraph } from '../lib/graph-layout';
-import { GROUPS, type GraphEntry } from '../lib/graph';
+import { GROUPS, SECTION_IDS, type GraphEntry } from '../lib/graph';
 import { formatDate } from '../lib/format';
 
 const posts = (await getCollection('posts')).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
 );
-const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const projects = (await getCollection('projects')).sort(
+  (a, b) =>
+    SECTION_IDS.indexOf(a.data.category) - SECTION_IDS.indexOf(b.data.category) ||
+    a.data.order - b.data.order,
+);
 
 const entries: GraphEntry[] = [
   ...projects.map((project) => ({
     id: `project-${project.id}`,
     group: 'projects' as const,
+    section: project.data.category,
     label: project.data.title,
     href: project.data.href,
     meta: project.data.tags.join(' · '),
@@ -31,12 +35,11 @@ const entries: GraphEntry[] = [
   })),
 ];
 
-const model = buildGraph(entries);
 const profile = { name: 'Sherlock Nieh', role: '作品集导航' };
 ---
 
 <BaseLayout title="Sherlock Nieh · 作品集导航">
-  <NodeGraph client:load model={model} profile={profile} />
+  <NodeGraph client:load entries={entries} profile={profile} />
 
   <noscript>
     <nav class="no-script-nav">

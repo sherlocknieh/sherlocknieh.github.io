@@ -1,6 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
+import { SECTION_IDS } from './lib/graph';
 
 /** 文章: 一篇文章就是一个写作节点的载体 */
 const posts = defineCollection({
@@ -23,6 +24,8 @@ const projects = defineCollection({
     summary: z.string(),
     href: z.url(),
     tags: z.array(z.string()).default([]),
+    /** 画布上的分类, 决定项目挂在项目分组下的哪个分类节点 */
+    category: z.enum(SECTION_IDS as [string, ...string[]]),
     order: z.number().default(0),
   }),
 });
