@@ -26,10 +26,11 @@ export interface GraphSectionMeta {
 }
 
 export const SECTIONS: readonly GraphSectionMeta[] = [
-  { id: 'apps', label: '应用' },
-  { id: 'tools', label: '工具' },
-  { id: 'visual', label: '可视化' },
-  { id: 'lab', label: '实验' },
+  { id: 'apps', label: '在线APP' },
+  { id: 'extensions', label: '浏览器插件' },
+  { id: 'userscripts', label: '油猴脚本' },
+  { id: 'devtools', label: '开发工具' },
+  { id: 'lab', label: '学习与实验' },
 ];
 
 export const SECTION_IDS = SECTIONS.map((section) => section.id);

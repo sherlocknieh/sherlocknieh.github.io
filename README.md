@@ -33,7 +33,8 @@ npm run check     # Astro 类型检查
 ## 节点图的组织方式
 
 画布是 **根 → 分组 → 分类 → 叶子** 的树: 分组是内容形态, 分类只在分组内部切分主题。
-条目多时分组靠分类收拢, 所以项目按 **应用 / 工具 / 可视化 / 实验** 四类展示。
+条目多时分组靠分类收拢, 所以项目按交付形态分成
+**在线APP / 浏览器插件 / 油猴脚本 / 开发工具 / 学习与实验** 五类。
 
 只有当前聚焦的分支展开, 其余分组收成一个节点, 总览因此始终紧凑。点击分组展开分类,
 点击分类展开该类的项目, 点击项目跳转; 点击空白、总览按钮或根节点回到总览。
@@ -75,7 +76,7 @@ title: 项目名
 summary: 一句话说明
 href: https://github.com/sherlocknieh/xxx
 tags: [Astro]
-category: tools   # apps | tools | visual | lab
+category: extensions   # apps | extensions | userscripts | devtools | lab
 order: 2         # 同分类内的排序
 ---
 ```
