@@ -29,17 +29,10 @@ const entries: GraphEntry[] = [
     href: `/posts/${post.id}`,
     meta: formatDate(post.data.date),
   })),
-  {
-    id: 'about-resume',
-    group: 'about' as const,
-    label: '个人简历',
-    href: '/resume',
-    meta: 'A4 打印版',
-  },
 ];
 
 const model = buildGraph(entries);
-const profile = { name: 'Sherlock Nieh', role: '作品集导航', avatar: '/assets/avatar.jpg' };
+const profile = { name: 'Sherlock Nieh', role: '作品集导航' };
 ---
 
 <BaseLayout title="Sherlock Nieh · 作品集导航">
@@ -48,20 +41,22 @@ const profile = { name: 'Sherlock Nieh', role: '作品集导航', avatar: '/asse
   <noscript>
     <nav class="no-script-nav">
       {
-        GROUPS.map((group) => (
-          <section>
-            <h2>{group.label}</h2>
-            <ul>
-              {entries
-                .filter((entry) => entry.group === group.id)
-                .map((entry) => (
-                  <li>
-                    <a href={entry.href}>{entry.label}</a>
-                  </li>
-                ))}
-            </ul>
-          </section>
-        ))
+        GROUPS.filter((group) => entries.some((entry) => entry.group === group.id)).map(
+          (group) => (
+            <section>
+              <h2>{group.label}</h2>
+              <ul>
+                {entries
+                  .filter((entry) => entry.group === group.id)
+                  .map((entry) => (
+                    <li>
+                      <a href={entry.href}>{entry.label}</a>
+                    </li>
+                  ))}
+              </ul>
+            </section>
+          ),
+        )
       }
     </nav>
   </noscript>

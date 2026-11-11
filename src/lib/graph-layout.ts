@@ -2,7 +2,7 @@ import { GROUPS, type GraphEntry, type GraphGroupMeta } from './graph';
 
 /** 节点尺寸是布局与渲染的唯一来源, 样式层不再重复声明宽高 */
 export const NODE_SIZE = {
-  root: { width: 132, height: 132 },
+  root: { width: 132, height: 84 },
   category: { width: 208, height: 64 },
   leaf: { width: 268, height: 60 },
 } as const;
@@ -45,11 +45,13 @@ export interface GraphModel {
 /**
  * 把内容条目折算成固定的树状坐标: 根在左, 分组纵向排列, 叶子再向右展开.
  * 坐标只由分组数量和叶子数量决定, 因此新增内容不会让已有节点跳动.
+ * 没有条目的分组不参与布局.
  */
 export function buildGraph(entries: GraphEntry[]): GraphModel {
-  const lastIndex = (GROUPS.length - 1) / 2;
+  const used = GROUPS.filter((meta) => entries.some((entry) => entry.group === meta.id));
+  const lastIndex = (used.length - 1) / 2;
 
-  const groups = GROUPS.map((meta, index) => {
+  const groups = used.map((meta, index) => {
     const center: Point = {
       x: AXIS.categoryX,
       y: (index - lastIndex) * AXIS.categoryGapY,

@@ -32,14 +32,12 @@ import type { GroupId } from '../lib/graph';
 export interface GraphProfile {
   name: string;
   role: string;
-  avatar: string;
 }
 
 interface RootData extends Record<string, unknown> {
   kind: 'root';
   label: string;
   subtitle: string;
-  avatar: string;
 }
 
 interface GroupData extends Record<string, unknown> {
@@ -112,7 +110,6 @@ function RootNode({ data }: NodeProps) {
   return (
     <button type="button" className="node-card node-card--root" onClick={reset} title="回到总览">
       <Handle type="source" position={Position.Right} className="node-handle" isConnectable={false} />
-      <img className="node-avatar" src={d.avatar} alt="" width={52} height={52} />
       <span className="node-name">{d.label}</span>
       <span className="node-role">{d.subtitle}</span>
     </button>
@@ -254,7 +251,6 @@ function GraphCanvas({ model, profile }: { model: GraphModel; profile: GraphProf
           kind: 'root',
           label: profile.name,
           subtitle: profile.role,
-          avatar: profile.avatar,
         },
         draggable: false,
       },

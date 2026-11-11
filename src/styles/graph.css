@@ -109,14 +109,6 @@
   background: radial-gradient(circle at 50% 0%, rgba(94, 234, 212, 0.1), var(--surface) 68%);
 }
 
-.node-avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid var(--line-strong);
-}
-
 .node-name {
   font-size: 13px;
   font-weight: 650;

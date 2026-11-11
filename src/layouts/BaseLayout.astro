@@ -5,7 +5,7 @@ interface Props {
   title: string;
   description?: string;
   /** 当前页面对应的导航项, 用于高亮 */
-  nav?: 'posts' | 'resume';
+  nav?: 'posts';
 }
 
 const { title, description = 'Sherlock Nieh 的作品集导航', nav } = Astro.props;
@@ -16,7 +16,7 @@ const { title, description = 'Sherlock Nieh 的作品集导航', nav } = Astro.p
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" href="/assets/avatar.jpg" />
+    <link rel="icon" href="/assets/git.svg" />
     <title>{title}</title>
     <meta name="description" content={description} />
   </head>
@@ -24,12 +24,10 @@ const { title, description = 'Sherlock Nieh 的作品集导航', nav } = Astro.p
   <body>
     <header class="site-header">
       <a class="brand" href="/">
-        <img src="/assets/avatar.jpg" alt="" width="26" height="26" />
         <span>sherlocknieh</span>
       </a>
       <nav class="site-nav">
         <a href="/posts" aria-current={nav === 'posts' ? 'page' : undefined}>文章</a>
-        <a href="/resume" aria-current={nav === 'resume' ? 'page' : undefined}>简历</a>
         <a href="https://github.com/sherlocknieh" target="_blank" rel="noopener noreferrer">
           GitHub
           <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true" focusable="false">
