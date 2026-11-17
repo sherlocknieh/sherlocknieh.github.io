@@ -158,39 +158,40 @@
   font-weight: 600;
 }
 
-.node-badge {
+/* 计数与展开按钮是同一个控件: 收起时显示子节点数, 展开后显示收起图标 */
+.node-toggle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  min-width: 22px;
+  height: 20px;
   margin-left: auto;
-  padding: 1px 7px;
+  padding: 0 6px;
+  border: 0;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.05);
   color: var(--muted);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
 }
 
-.node-toggle {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  margin-left: 8px;
+.node-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--fg);
+}
+
+.node-toggle.is-open {
+  min-width: 20px;
   padding: 0;
-  border: 0;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.04);
-  color: var(--muted);
-  cursor: pointer;
 }
 
 .node-card.is-active {
   border-color: var(--accent);
   background: var(--accent-soft);
-}
-
-.node-card.is-active .node-badge {
-  background: rgba(94, 234, 212, 0.18);
-  color: var(--accent);
 }
 
 .node-card.is-active .node-toggle {

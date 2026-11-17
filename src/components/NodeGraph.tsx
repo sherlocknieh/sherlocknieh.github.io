@@ -107,12 +107,9 @@ const ExternalIcon = () => (
   </svg>
 );
 
-const PlusMinusIcon = ({ open }: { open: boolean }) => (
+const MinusIcon = () => (
   <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">
     <path d="M3.5 8h9" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    {!open && (
-      <path d="M8 3.5v9" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    )}
   </svg>
 );
 
@@ -156,17 +153,18 @@ function GroupNode({ data }: NodeProps) {
         onClick={() => (isSection ? focusSection(d.owner, d.id) : focusGroup(d.owner))}
       >
         <span className="node-group-label">{d.label}</span>
-        <span className="node-badge">{d.count}</span>
       </button>
       {d.expandable && (
+        // 计数与展开按钮合为一体: 收起时显示子节点数, 展开后变成收起图标
         <button
           type="button"
-          className="node-toggle"
+          className={`node-toggle${d.open ? ' is-open' : ''}`}
           aria-expanded={d.open}
-          aria-label={d.open ? '收起' : '展开'}
+          aria-label={d.open ? `收起 ${d.count} 个子节点` : `展开 ${d.count} 个子节点`}
+          title={d.open ? '收起' : `展开 ${d.count} 项`}
           onClick={() => (isSection ? toggleSection(d.owner, d.id) : toggleGroup(d.owner))}
         >
-          <PlusMinusIcon open={d.open} />
+          {d.open ? <MinusIcon /> : <span className="node-count">{d.count}</span>}
         </button>
       )}
       <Handle type="source" position={Position.Right} className="node-handle" isConnectable={false} />
@@ -376,9 +374,8 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
       const id = groupNodeId(gid);
       const rect = rects.get(id)!;
       const active = focus?.group === gid;
-      const leafCount =
-        group.leaves.length +
-        group.sections.reduce((sum, section) => sum + section.leaves.length, 0);
+      // 计数只算直接子节点: 有分类时是分类数, 否则是直接挂的条目数
+      const childCount = group.sections.length > 0 ? group.sections.length : group.leaves.length;
       // 分组展开表示它的分类可见, 收起时整组只留一个节点
       const groupOpen = !collapsed.has(groupKey(gid));
 
@@ -393,9 +390,9 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
           owner: gid,
           label: group.meta.label,
           hint: group.meta.hint,
-          count: leafCount,
+          count: childCount,
           active,
-          expandable: leafCount > 0,
+          expandable: childCount > 0,
           open: groupOpen,
         },
         draggable: false,
