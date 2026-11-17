@@ -140,19 +140,45 @@
   color: var(--accent);
 }
 
+/* 叶子主体是两行文本, 跳转与展开各占一个独立按钮 */
 .node-card--leaf {
-  padding: 9px 14px;
+  gap: 6px;
+  padding: 8px 10px 8px 14px;
 }
 
-.node-link {
-  display: flex;
+.node-card--leaf .node-main {
   flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
   gap: 2px;
-  width: 100%;
+}
+
+.node-jump {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.05);
+  text-decoration: none;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.node-jump:hover {
+  background: rgba(94, 234, 212, 0.18);
+  color: var(--accent);
+}
+
+.node-jump svg {
+  width: 13px;
+  height: 13px;
 }
 
 .node-leaf-label {
   overflow: hidden;
+  max-width: 100%;
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
@@ -163,8 +189,60 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  overflow: hidden;
+  max-width: 100%;
   font-size: 11px;
   color: var(--muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 详情节点: 链接用图标占位, 截图用缩略图, 右侧放标题与类型 */
+.node-card--detail {
+  justify-content: flex-start;
+  padding: 8px 12px;
+}
+
+.node-detail-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.node-detail-thumb,
+.node-detail-icon {
+  flex: none;
+  width: 88px;
+  height: 52px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+}
+
+.node-detail-thumb {
+  object-fit: cover;
+}
+
+.node-detail-icon {
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: var(--bg-soft);
+}
+
+.node-detail-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.node-detail-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .graph-reset {

@@ -26,6 +26,18 @@ const entries: GraphEntry[] = [
     href: project.data.href,
     meta: project.data.tags.join(' · '),
     external: true,
+    details: [
+      ...project.data.links.map((link) => ({
+        kind: 'link' as const,
+        label: link.label,
+        href: link.href,
+      })),
+      ...project.data.screenshots.map((shot) => ({
+        kind: 'shot' as const,
+        label: shot.label,
+        src: shot.src,
+      })),
+    ],
   })),
   ...posts.map((post) => ({
     id: `post-${post.id}`,
@@ -33,6 +45,18 @@ const entries: GraphEntry[] = [
     label: post.data.title,
     href: `/posts/${post.id}`,
     meta: formatDate(post.data.date),
+    details: [
+      ...post.data.links.map((link) => ({
+        kind: 'link' as const,
+        label: link.label,
+        href: link.href,
+      })),
+      ...post.data.screenshots.map((shot) => ({
+        kind: 'shot' as const,
+        label: shot.label,
+        src: shot.src,
+      })),
+    ],
   })),
 ];
 

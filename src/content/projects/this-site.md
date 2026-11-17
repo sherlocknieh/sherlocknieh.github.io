@@ -5,6 +5,11 @@ href: https://sherlocknieh.github.io
 tags: [Astro, React]
 group: apps
 order: 4
+links:
+  - label: GitHub 仓库
+    href: https://github.com/sherlocknieh/sherlocknieh.github.io
+  - label: 文章列表
+    href: https://sherlocknieh.github.io/posts/
 ---
 
 作品集导航本身即作品：内容与节点位置分离，新增文章只需要加一个 Markdown 文件。

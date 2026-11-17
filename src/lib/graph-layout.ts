@@ -2,8 +2,10 @@ import {
   GROUPS,
   SECTIONS,
   groupKey,
+  leafKey,
   sectionById,
   sectionKey,
+  type GraphDetail,
   type GraphEntry,
   type GraphGroupMeta,
   type GraphSectionMeta,
@@ -16,6 +18,7 @@ export const NODE_SIZE = {
   category: { width: 208, height: 64 },
   section: { width: 188, height: 56 },
   leaf: { width: 268, height: 60 },
+  detail: { width: 280, height: 72 },
 } as const;
 
 const AXIS = {
@@ -26,10 +29,14 @@ const AXIS = {
   leafX: 1030,
   /** 分组没有分类时, 叶子直接贴在分组右侧 */
   directLeafX: 690,
+  /** 叶子展开后的详情列, 跟随叶子所在列右移一级 */
+  detailX: 1370,
+  directDetailX: 1030,
   /** 纵向间距按节点高度取比例: 分组大一级, 空档也略大 */
   groupGapY: 44,
   sectionGapY: 20,
   leafGapY: 74,
+  detailGapY: 84,
 } as const;
 
 export interface Point {
@@ -42,10 +49,18 @@ export interface Rect extends Point {
   height: number;
 }
 
+export interface LaidOutDetail {
+  detail: GraphDetail;
+  /** 详情节点中心坐标 */
+  center: Point;
+}
+
 export interface LaidOutLeaf {
   entry: GraphEntry;
   /** 节点中心坐标 */
   center: Point;
+  /** 叶子展开后的详情节点, 收起时为空 */
+  details: LaidOutDetail[];
 }
 
 export interface LaidOutSection {
@@ -71,7 +86,26 @@ export interface GraphModel {
 const stackHeight = (count: number, gap: number, nodeHeight: number) =>
   count === 0 ? 0 : (count - 1) * gap + nodeHeight;
 
-const leafSpan = (count: number) => stackHeight(count, AXIS.leafGapY, NODE_SIZE.leaf.height);
+/** 相邻叶子块之间的空隙: leafGapY 是单叶子的中心距, 减掉叶高就是块间距 */
+const LEAF_GAP = AXIS.leafGapY - NODE_SIZE.leaf.height;
+
+/** 详情列 n 个节点的总高度 */
+const detailSpan = (count: number) =>
+  stackHeight(count, AXIS.detailGapY, NODE_SIZE.detail.height);
+
+const isLeafOpen = (id: string, collapsed: ReadonlySet<string>) =>
+  !collapsed.has(leafKey(id));
+
+/** 叶子块的高度: 展开详情时容纳详情列, 收起时只占叶子节点本身 */
+const leafBlockHeight = (entry: GraphEntry, collapsed: ReadonlySet<string>) =>
+  entry.details.length > 0 && isLeafOpen(entry.id, collapsed)
+    ? Math.max(NODE_SIZE.leaf.height, detailSpan(entry.details.length))
+    : NODE_SIZE.leaf.height;
+
+/** 一组叶子按块纵向堆叠的总高度 */
+const leavesSpan = (entries: GraphEntry[], collapsed: ReadonlySet<string>) =>
+  entries.reduce((sum, entry) => sum + leafBlockHeight(entry, collapsed), 0) +
+  LEAF_GAP * Math.max(entries.length - 1, 0);
 
 const leavesOf = (entries: GraphEntry[], section?: string) =>
   entries.filter((entry) => entry.section === section);
@@ -84,9 +118,15 @@ function sectionsOf(group: GroupId, entries: GraphEntry[]): GraphSectionMeta[] {
   return SECTIONS.filter((section) => section.group === group && used.has(section.id));
 }
 
-/** 分类块的高度: 展开时容纳叶子, 收起时只占分类节点的高度 */
-const sectionBlockHeight = (count: number, revealed: boolean) =>
-  revealed ? Math.max(leafSpan(count), NODE_SIZE.section.height) : NODE_SIZE.section.height;
+/** 分类块的高度: 展开时容纳叶子块, 收起时只占分类节点的高度 */
+const sectionBlockHeight = (
+  leaves: GraphEntry[],
+  revealed: boolean,
+  collapsed: ReadonlySet<string>,
+) =>
+  revealed
+    ? Math.max(leavesSpan(leaves, collapsed), NODE_SIZE.section.height)
+    : NODE_SIZE.section.height;
 
 /** 分类的条目是否展开: 分组收起时整组收起, 否则看分类自身是否收起 */
 const isSectionOpen = (group: GroupId, section: string, collapsed: ReadonlySet<string>) =>
@@ -103,7 +143,7 @@ function groupContentHeight(
 
   const sections = sectionsOf(group, entries);
   if (sections.length === 0) {
-    return Math.max(leafSpan(entries.length), NODE_SIZE.category.height);
+    return Math.max(leavesSpan(entries, collapsed), NODE_SIZE.category.height);
   }
 
   const total =
@@ -111,8 +151,9 @@ function groupContentHeight(
       (sum, section) =>
         sum +
         sectionBlockHeight(
-          leavesOf(entries, section.id).length,
+          leavesOf(entries, section.id),
           isSectionOpen(group, section.id, collapsed),
+          collapsed,
         ),
       0,
     ) +
@@ -120,22 +161,64 @@ function groupContentHeight(
   return Math.max(total, NODE_SIZE.category.height);
 }
 
+/** 一个叶子及其展开后的详情列, 整体在自己的块里垂直居中 */
+function buildLeaf(
+  entry: GraphEntry,
+  top: number,
+  x: number,
+  detailX: number,
+  collapsed: ReadonlySet<string>,
+): LaidOutLeaf {
+  const height = leafBlockHeight(entry, collapsed);
+  const span = detailSpan(entry.details.length);
+  const detailTop = top + (height - span) / 2;
+  const open = entry.details.length > 0 && isLeafOpen(entry.id, collapsed);
+
+  return {
+    entry,
+    center: { x, y: top + height / 2 },
+    details: open
+      ? entry.details.map((detail, index) => ({
+          detail,
+          center: {
+            x: detailX,
+            y: detailTop + NODE_SIZE.detail.height / 2 + index * AXIS.detailGapY,
+          },
+        }))
+      : [],
+  };
+}
+
+/** 叶子按块纵向堆叠: 展开详情时块变高, 相邻叶子自然让位 */
+function buildLeaves(
+  entries: GraphEntry[],
+  top: number,
+  x: number,
+  detailX: number,
+  collapsed: ReadonlySet<string>,
+): LaidOutLeaf[] {
+  let cursor = top;
+  return entries.map((entry) => {
+    const leaf = buildLeaf(entry, cursor, x, detailX, collapsed);
+    cursor += leafBlockHeight(entry, collapsed) + LEAF_GAP;
+    return leaf;
+  });
+}
+
 function buildSection(
   meta: GraphSectionMeta,
   entries: GraphEntry[],
   top: number,
   revealed: boolean,
+  collapsed: ReadonlySet<string>,
 ): LaidOutSection {
-  const height = sectionBlockHeight(entries.length, revealed);
-  const leafTop = top + (height - leafSpan(entries.length)) / 2;
+  const height = sectionBlockHeight(entries, revealed, collapsed);
+  const leafTop = top + (height - leavesSpan(entries, collapsed)) / 2;
 
   return {
     meta,
     center: { x: AXIS.sectionX, y: top + height / 2 },
-    leaves: entries.map((entry, index) => ({
-      entry,
-      center: { x: AXIS.leafX, y: leafTop + NODE_SIZE.leaf.height / 2 + index * AXIS.leafGapY },
-    })),
+    leaves: buildLeaves(entries, leafTop, AXIS.leafX, AXIS.detailX, collapsed),
   };
 }
 
@@ -147,20 +230,14 @@ function buildGroup(
   collapsed: ReadonlySet<string>,
 ): LaidOutGroup {
   const center: Point = { x: AXIS.groupX, y: top + height / 2 };
-  const leafTop = top + (height - leafSpan(entries.length)) / 2;
   const sections = sectionsOf(meta.id, entries);
 
   if (sections.length === 0) {
+    const leafTop = top + (height - leavesSpan(entries, collapsed)) / 2;
     return {
       meta,
       center,
-      leaves: entries.map((entry, index) => ({
-        entry,
-        center: {
-          x: AXIS.directLeafX,
-          y: leafTop + NODE_SIZE.leaf.height / 2 + index * AXIS.leafGapY,
-        },
-      })),
+      leaves: buildLeaves(entries, leafTop, AXIS.directLeafX, AXIS.directDetailX, collapsed),
       sections: [],
     };
   }
@@ -168,9 +245,16 @@ function buildGroup(
   let cursor = top;
   const laidOut = sections.map((section) => {
     const sectionRevealed = isSectionOpen(meta.id, section.id, collapsed);
-    const laid = buildSection(section, leavesOf(entries, section.id), cursor, sectionRevealed);
+    const laid = buildSection(
+      section,
+      leavesOf(entries, section.id),
+      cursor,
+      sectionRevealed,
+      collapsed,
+    );
     cursor +=
-      sectionBlockHeight(leavesOf(entries, section.id).length, sectionRevealed) + AXIS.sectionGapY;
+      sectionBlockHeight(leavesOf(entries, section.id), sectionRevealed, collapsed) +
+      AXIS.sectionGapY;
     return laid;
   });
 

@@ -39,6 +39,11 @@ export const SECTIONS: readonly GraphSectionMeta[] = [
 
 export const SECTION_IDS = SECTIONS.map((section) => section.id);
 
+/** 叶子展开后的详情节点: 相关链接或页面截图 */
+export type GraphDetail =
+  | { kind: 'link'; label: string; href: string }
+  | { kind: 'shot'; label: string; src: string };
+
 export interface GraphEntry {
   /** 全局唯一, 用作画布节点 id */
   id: string;
@@ -49,20 +54,24 @@ export interface GraphEntry {
   href: string;
   meta?: string;
   external?: boolean;
+  /** 展开叶子后显示的下一层节点, 为空时叶子不显示展开按钮 */
+  details: GraphDetail[];
 }
 
 /** 收起状态的键: 分组用自身 id 表示收起它直接挂的条目, 分类用 `分组/分类` 表示收起它的条目 */
 export const groupKey = (id: GroupId) => id;
 export const sectionKey = (group: GroupId, section: string) => `${group}/${section}`;
+export const leafKey = (id: string) => `leaf/${id}`;
 
-/** 根节点收起时整棵树只剩根; 和分组、分类共用同一个 collapsed 集合 */
+/** 根节点收起时整棵树只剩根; 和分组、分类、叶子共用同一个 collapsed 集合 */
 export const ROOT_KEY = 'root';
 
-/** 默认只展开到二级: 根与分组可见, 分组下的分类与条目都收起 */
-export function defaultCollapsed(): Set<string> {
+/** 默认只展开到二级: 根与分组可见, 分类、条目及其详情都收起 */
+export function defaultCollapsed(entries: readonly GraphEntry[] = []): Set<string> {
   return new Set([
     ...GROUPS.map((group) => groupKey(group.id)),
     ...SECTIONS.map((section) => sectionKey(section.group, section.id)),
+    ...entries.map((entry) => leafKey(entry.id)),
   ]);
 }
 

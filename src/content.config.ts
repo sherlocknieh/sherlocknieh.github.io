@@ -3,6 +3,10 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { GROUP_IDS, SECTIONS, SECTION_IDS } from './lib/graph';
 
+/** 叶子展开后的详情: 相关链接与页面截图 */
+const detailLink = z.object({ label: z.string(), href: z.url() });
+const screenshot = z.object({ label: z.string(), src: z.string().min(1) });
+
 /** 文章: 一篇文章就是一个写作节点的载体 */
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
@@ -13,6 +17,8 @@ const posts = defineCollection({
     /** 按需注入 MathJax, 避免所有页面都加载渲染引擎 */
     math: z.boolean().default(false),
     mermaid: z.boolean().default(false),
+    links: z.array(detailLink).default([]),
+    screenshots: z.array(screenshot).default([]),
   }),
 });
 
@@ -30,6 +36,8 @@ const projects = defineCollection({
       /** 分组内的分类, 只有需要再切分的分组才填 */
       category: z.enum(SECTION_IDS as [string, ...string[]]).optional(),
       order: z.number().default(0),
+      links: z.array(detailLink).default([]),
+      screenshots: z.array(screenshot).default([]),
     })
     // 分类必须属于所在分组, 否则条目会挂到别的分组下
     .refine(

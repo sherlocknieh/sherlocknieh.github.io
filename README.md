@@ -42,6 +42,9 @@ npm run check     # Astro 类型检查
 默认只展开到二级: 根 → 分组, 分组下的分类与条目都收起。节点右侧的按钮同时承担计数与展开:
 收起时显示直接子节点数, 展开后变成收起图标。点击节点主体把视口框住该节点及其子节点并自动展开,
 整支居中铺满; 点击空白或总览按钮只清空聚焦, 已展开的节点保持展开, 收起根节点后画布只剩根。
+
+叶子的主体只负责聚焦与展开, 跳转由右侧独立的箭头按钮完成; 配了 `links` / `screenshots`
+的叶子会出现展开按钮, 展开后显示相关链接与页面截图子节点。
 没有条目的分组不会出现在画布上。坐标由条目数量推导, 不需要手写位置。
 
 节点数据全部来自内容集合:
@@ -69,6 +72,12 @@ date: 2026-01-01
 description: 可选, 用于 meta description
 math: true      # 可选, 需要公式时开启 MathJax
 mermaid: true   # 可选, 需要流程图时开启 Mermaid
+links:          # 可选, 叶子展开后的相关链接
+  - label: 相关文章
+    href: https://example.com
+screenshots:    # 可选, 叶子展开后的页面截图
+  - label: 首页
+    src: /assets/shots/my-post.png
 ---
 
 正文...
@@ -85,6 +94,12 @@ tags: [Astro]
 group: tools           # apps | lab | tools | writing | about
 category: extensions   # 仅 tools 需要: extensions | userscripts | vscode | desktop | devtools
 order: 2         # 同分类内的排序
+links:           # 可选, 叶子展开后的相关链接
+  - label: 在线演示
+    href: https://example.com
+screenshots:     # 可选, 叶子展开后的截图, src 指向 public/ 下的图片
+  - label: 首页
+    src: /assets/shots/xxx-home.png
 ---
 ```
 
