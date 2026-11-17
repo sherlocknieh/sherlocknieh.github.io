@@ -1,9 +1,9 @@
 /**
- * 节点图的概念模型: 分组是稳定的内容形态, 分类是分组内部的主题切分, 叶子是内容集合里的条目.
+ * 节点图的概念模型: 分组是根节点下的一级类别, 分类是分组内部的主题切分, 叶子是内容集合里的条目.
  * 维度与分类的标签写死在这里, 内容只负责声明自己属于哪个分组和分类.
  */
 
-export const GROUP_IDS = ['projects', 'writing', 'about'] as const;
+export const GROUP_IDS = ['apps', 'lab', 'tools', 'writing', 'about'] as const;
 
 export type GroupId = (typeof GROUP_IDS)[number];
 
@@ -14,7 +14,9 @@ export interface GraphGroupMeta {
 }
 
 export const GROUPS: readonly GraphGroupMeta[] = [
-  { id: 'projects', label: '项目', hint: '做过的东西' },
+  { id: 'apps', label: '在线APP', hint: '能直接打开用的东西' },
+  { id: 'lab', label: '学习与实验', hint: '课程、练习与折腾' },
+  { id: 'tools', label: '插件&工具', hint: '装进浏览器和系统里的小东西' },
   { id: 'writing', label: '写作', hint: '写过的东西' },
   { id: 'about', label: '关于', hint: '关于我' },
 ];
@@ -23,14 +25,16 @@ export const GROUPS: readonly GraphGroupMeta[] = [
 export interface GraphSectionMeta {
   id: string;
   label: string;
+  /** 分类归属的分组, 决定它挂在哪个分组节点下 */
+  group: GroupId;
 }
 
 export const SECTIONS: readonly GraphSectionMeta[] = [
-  { id: 'apps', label: '在线APP' },
-  { id: 'extensions', label: '浏览器插件' },
-  { id: 'userscripts', label: '油猴脚本' },
-  { id: 'devtools', label: '开发工具' },
-  { id: 'lab', label: '学习与实验' },
+  { id: 'extensions', label: '浏览器插件', group: 'tools' },
+  { id: 'userscripts', label: '油猴脚本', group: 'tools' },
+  { id: 'vscode', label: 'VSCode插件', group: 'tools' },
+  { id: 'desktop', label: '桌面工具', group: 'tools' },
+  { id: 'devtools', label: '开发工具', group: 'tools' },
 ];
 
 export const SECTION_IDS = SECTIONS.map((section) => section.id);

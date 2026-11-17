@@ -32,9 +32,10 @@ npm run check     # Astro 类型检查
 
 ## 节点图的组织方式
 
-画布是 **根 → 分组 → 分类 → 叶子** 的树: 分组是内容形态, 分类只在分组内部切分主题。
-条目多时分组靠分类收拢, 所以项目按交付形态分成
-**在线APP / 浏览器插件 / 油猴脚本 / 开发工具 / 学习与实验** 五类。
+画布是 **根 → 分组 → 分类 → 叶子** 的树: 根节点是「项目导航」, 分组是根下的一级类别,
+分类只在分组内部切分主题。条目多时分组靠分类收拢, 所以
+**在线APP / 学习与实验** 直接挂条目, **插件&工具** 再分成
+**浏览器插件 / 油猴脚本 / VSCode插件 / 桌面工具 / 开发工具** 五类。
 
 只有当前聚焦的分支展开, 其余分组收成一个节点, 总览因此始终紧凑。点击分组展开分类,
 点击分类展开该类的项目, 点击项目跳转; 点击空白、总览按钮或根节点回到总览。
@@ -44,7 +45,9 @@ npm run check     # Astro 类型检查
 
 | 分组 | 数据来源 | 说明 |
 | --- | --- | --- |
-| 项目 | `src/content/projects/*.md` | `href` 必填, `category` 决定分类 |
+| 在线APP | `src/content/projects/*.md` | `group: apps`, 直接挂条目 |
+| 学习与实验 | `src/content/projects/*.md` | `group: lab`, 直接挂条目 |
+| 插件&工具 | `src/content/projects/*.md` | `group: tools`, `category` 决定子类别 |
 | 写作 | `src/content/posts/*.md` | 按日期倒序, 不分类 |
 | 关于 | 目前无条目 | 需要时再补内容 |
 
@@ -76,12 +79,14 @@ title: 项目名
 summary: 一句话说明
 href: https://github.com/sherlocknieh/xxx
 tags: [Astro]
-category: extensions   # apps | extensions | userscripts | devtools | lab
+group: tools           # apps | lab | tools | writing | about
+category: extensions   # 仅 tools 需要: extensions | userscripts | vscode | desktop | devtools
 order: 2         # 同分类内的排序
 ---
 ```
 
-分类的 id 与标签定义在 `src/lib/graph.ts` 的 `SECTIONS` 里, 新增分类改这一处即可。
+分组与分类的 id、标签、归属定义在 `src/lib/graph.ts` 的 `GROUPS` 与 `SECTIONS` 里,
+新增分类改这一处即可; `category` 必须属于声明的 `group`, 否则构建期报错。
 
 ## 页面
 

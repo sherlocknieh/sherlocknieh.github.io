@@ -80,11 +80,11 @@ const leavesOf = (entries: GraphEntry[], section?: string) =>
   entries.filter((entry) => entry.section === section);
 
 /** 分组内实际出现的分类, 按 SECTIONS 的声明顺序排列 */
-function sectionsOf(entries: GraphEntry[]): GraphSectionMeta[] {
+function sectionsOf(group: GroupId, entries: GraphEntry[]): GraphSectionMeta[] {
   const used = new Set(entries.map((entry) => entry.section).filter((id): id is string => !!id));
   // 未知分类在构建期报错, 避免条目悄悄从画布上消失
   for (const id of used) sectionById(id);
-  return SECTIONS.filter((section) => used.has(section.id));
+  return SECTIONS.filter((section) => section.group === group && used.has(section.id));
 }
 
 /** 分类块展开时容纳叶子, 收起时只占分类节点的高度 */
@@ -92,8 +92,12 @@ const sectionBlockHeight = (count: number, expanded: boolean) =>
   expanded ? Math.max(leafSpan(count), NODE_SIZE.section.height) : NODE_SIZE.section.height;
 
 /** 分组的完整内容高度, 只有展开的分组才按它占位 */
-function groupContentHeight(entries: GraphEntry[], expandedSection?: string): number {
-  const sections = sectionsOf(entries);
+function groupContentHeight(
+  group: GroupId,
+  entries: GraphEntry[],
+  expandedSection?: string,
+): number {
+  const sections = sectionsOf(group, entries);
   if (sections.length === 0) {
     return Math.max(leafSpan(entries.length), NODE_SIZE.category.height);
   }
@@ -137,7 +141,7 @@ function buildGroup(
 ): LaidOutGroup {
   const center: Point = { x: AXIS.groupX, y: top + height / 2 };
   const leafTop = top + (height - leafSpan(entries.length)) / 2;
-  const sections = sectionsOf(entries);
+  const sections = sectionsOf(meta.id, entries);
 
   if (sections.length === 0) {
     return {
@@ -185,7 +189,7 @@ export function buildGraph(entries: GraphEntry[], expansion?: GraphExpansion): G
         entries: groupEntries,
         expanded,
         height: expanded
-          ? groupContentHeight(groupEntries, expansion?.section)
+          ? groupContentHeight(meta.id, groupEntries, expansion?.section)
           : NODE_SIZE.category.height,
       };
     },

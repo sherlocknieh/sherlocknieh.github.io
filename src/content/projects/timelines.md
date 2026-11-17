@@ -1,8 +1,8 @@
 ---
 title: "TimeLines"
 summary: "通用的时间线整理与可视化工具"
-href: https://github.com/sherlocknieh/TimeLines
+href: https://sherlocknieh.github.io/TimeLines/
 tags: [Vue, TypeScript]
-category: apps
-order: 4
+group: apps
+order: 2
 ---
