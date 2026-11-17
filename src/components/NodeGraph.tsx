@@ -215,6 +215,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
   const [focus, setFocus] = useState<Focus | null>(null);
   const [resizeTick, setResizeTick] = useState(0);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const didInit = useRef(false);
   const { setViewport } = useReactFlow();
 
   // 默认展开到三级: 根 → 分组 → 分类, 分类下的条目默认收起, 由节点上的按钮展开
@@ -376,8 +377,11 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
       };
     }
 
-    // 同步设置视口: 动画依赖下一帧, 后台标签页里会被暂停, 结果就是画布停在默认位置
-    void setViewport(viewport);
+    // 首次取景直接定位, 此后的聚焦/缩放变化用动画过渡, 让平移过程可见
+    // 后台标签页里动画会被暂停, 此时退化为瞬时定位, 否则画布会停在默认位置
+    const animate = didInit.current && document.visibilityState === 'visible';
+    didInit.current = true;
+    void setViewport(viewport, { duration: animate ? 520 : 0 });
   }, [focus, rects, resizeTick, setViewport, visibleIds]);
 
   // 画布尺寸变化后重新取景, 避免节点被裁到视野外
