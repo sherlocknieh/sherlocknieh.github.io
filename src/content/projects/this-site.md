@@ -4,6 +4,7 @@ summary: 节点式作品集导航，Astro + React Flow
 href: https://sherlocknieh.github.io
 tags: [Astro, React]
 group: apps
+icon: globe
 order: 4
 links:
   - label: GitHub 仓库

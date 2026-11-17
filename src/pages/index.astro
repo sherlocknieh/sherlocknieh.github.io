@@ -26,6 +26,7 @@ const entries: GraphEntry[] = [
     href: project.data.href,
     meta: project.data.tags.join(' · '),
     external: true,
+    icon: project.data.icon,
     details: [
       ...project.data.links.map((link) => ({
         kind: 'link' as const,
@@ -45,6 +46,7 @@ const entries: GraphEntry[] = [
     label: post.data.title,
     href: `/posts/${post.id}`,
     meta: formatDate(post.data.date),
+    icon: post.data.icon,
     details: [
       ...post.data.links.map((link) => ({
         kind: 'link' as const,

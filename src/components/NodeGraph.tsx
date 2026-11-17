@@ -36,7 +36,9 @@ import {
   sectionKey,
   type GraphEntry,
   type GroupId,
+  type IconName,
 } from '../lib/graph';
+import { NodeIcon } from '../lib/icons';
 
 export interface GraphProfile {
   name: string;
@@ -111,6 +113,7 @@ const GraphInteraction = createContext<{
 interface CardData extends Record<string, unknown> {
   kind: 'root' | 'group' | 'section';
   target: Target;
+  icon: IconName;
   label: string;
   hint?: string;
   count: number;
@@ -121,6 +124,7 @@ interface CardData extends Record<string, unknown> {
 interface LeafData extends Record<string, unknown> {
   kind: 'leaf';
   target: Target;
+  icon: IconName;
   label: string;
   href: string;
   meta?: string;
@@ -190,6 +194,9 @@ function CardNode({ data }: NodeProps) {
         onClick={() => focus(d.target)}
         title={isRoot ? '聚焦根节点' : undefined}
       >
+        <span className="node-icon">
+          <NodeIcon name={d.icon} />
+        </span>
         <span className="node-group-label">{d.label}</span>
       </button>
       {/* 计数与展开按钮合为一体: 收起时显示子节点数, 展开后变成收起图标 */}
@@ -217,8 +224,13 @@ function LeafNode({ data }: NodeProps) {
     <div className={`node-card node-card--leaf${d.active ? ' is-active' : ''}`}>
       <Handle type="target" position={Position.Left} className="node-handle" isConnectable={false} />
       <button type="button" className="node-main" onClick={() => focus(d.target)} title="聚焦该条目">
-        <span className="node-leaf-label">{d.label}</span>
-        <span className="node-leaf-meta">{d.meta}</span>
+        <span className="node-icon">
+          <NodeIcon name={d.icon} />
+        </span>
+        <span className="node-leaf-text">
+          <span className="node-leaf-label">{d.label}</span>
+          <span className="node-leaf-meta">{d.meta}</span>
+        </span>
       </button>
       <a
         className="node-jump"
@@ -451,6 +463,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
       data: {
         kind: 'root',
         target: { kind: 'root' },
+        icon: 'compass',
         label: profile.name,
         count: model.groups.length,
         active: focus?.kind === 'root',
@@ -487,6 +500,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
             group: entry.group,
             section: entry.section,
           },
+          icon: entry.icon,
           label: entry.label,
           href: entry.href,
           meta: entry.meta,
@@ -557,6 +571,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
         data: {
           kind: 'group',
           target: { kind: 'group', group: gid },
+          icon: group.meta.icon,
           label: group.meta.label,
           hint: group.meta.hint,
           count: childCount,
@@ -588,6 +603,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
           data: {
             kind: 'section',
             target: { kind: 'section', group: gid, section: section.meta.id },
+            icon: section.meta.icon,
             label: section.meta.label,
             hint: `${group.meta.label} · ${section.meta.label}`,
             count: section.leaves.length,

@@ -4,5 +4,6 @@ summary: "文字, 公式, 代码, 插图混合写作方案实践"
 href: https://github.com/sherlocknieh/NoteBook
 tags: [Python]
 group: lab
+icon: notebook
 order: 2
 ---

@@ -1,7 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
-import { GROUP_IDS, SECTIONS, SECTION_IDS } from './lib/graph';
+import { GROUP_IDS, ICON_NAMES, SECTIONS, SECTION_IDS } from './lib/graph';
 
 /** 叶子展开后的详情: 相关链接与页面截图 */
 const detailLink = z.object({ label: z.string(), href: z.url() });
@@ -17,6 +17,7 @@ const posts = defineCollection({
     /** 按需注入 MathJax, 避免所有页面都加载渲染引擎 */
     math: z.boolean().default(false),
     mermaid: z.boolean().default(false),
+    icon: z.enum(ICON_NAMES).default('file'),
     links: z.array(detailLink).default([]),
     screenshots: z.array(screenshot).default([]),
   }),
@@ -36,6 +37,7 @@ const projects = defineCollection({
       /** 分组内的分类, 只有需要再切分的分组才填 */
       category: z.enum(SECTION_IDS as [string, ...string[]]).optional(),
       order: z.number().default(0),
+      icon: z.enum(ICON_NAMES).default('file'),
       links: z.array(detailLink).default([]),
       screenshots: z.array(screenshot).default([]),
     })

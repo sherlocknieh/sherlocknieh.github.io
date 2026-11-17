@@ -7,18 +7,59 @@ export const GROUP_IDS = ['apps', 'lab', 'tools', 'writing', 'about'] as const;
 
 export type GroupId = (typeof GROUP_IDS)[number];
 
+/** 节点图标名, 具体图形映射在 src/lib/icons.tsx */
+export const ICON_NAMES = [
+  'compass',
+  'app-window',
+  'puzzle',
+  'flask',
+  'pen',
+  'user',
+  'blocks',
+  'scroll',
+  'code',
+  'monitor',
+  'wrench',
+  'file-pen',
+  'brain',
+  'sparkles',
+  'wand',
+  'bot',
+  'mouse',
+  'clapperboard',
+  'notebook',
+  'qr',
+  'mouse-click',
+  'search',
+  'terminal',
+  'subtitles',
+  'swap',
+  'globe',
+  'calendar',
+  'checklist',
+  'tv',
+  'chart',
+  'chart-line',
+  'graduation',
+  'sigma',
+  'file',
+] as const;
+
+export type IconName = (typeof ICON_NAMES)[number];
+
 export interface GraphGroupMeta {
   id: GroupId;
   label: string;
   hint: string;
+  icon: IconName;
 }
 
 export const GROUPS: readonly GraphGroupMeta[] = [
-  { id: 'apps', label: '在线APP', hint: '能直接打开用的东西' },
-  { id: 'tools', label: '插件&工具', hint: '装进浏览器和系统里的小东西' },
-  { id: 'lab', label: '学习与实验', hint: '课程、练习与折腾' },
-  { id: 'writing', label: '写作', hint: '写过的东西' },
-  { id: 'about', label: '关于', hint: '关于我' },
+  { id: 'apps', label: '在线APP', hint: '能直接打开用的东西', icon: 'app-window' },
+  { id: 'tools', label: '插件&工具', hint: '装进浏览器和系统里的小东西', icon: 'puzzle' },
+  { id: 'lab', label: '学习与实验', hint: '课程、练习与折腾', icon: 'flask' },
+  { id: 'writing', label: '写作', hint: '写过的东西', icon: 'pen' },
+  { id: 'about', label: '关于', hint: '关于我', icon: 'user' },
 ];
 
 /** 分类只用于在分组内部收拢同主题条目, 顺序即画布上的纵向顺序 */
@@ -27,14 +68,15 @@ export interface GraphSectionMeta {
   label: string;
   /** 分类归属的分组, 决定它挂在哪个分组节点下 */
   group: GroupId;
+  icon: IconName;
 }
 
 export const SECTIONS: readonly GraphSectionMeta[] = [
-  { id: 'extensions', label: '浏览器插件', group: 'tools' },
-  { id: 'userscripts', label: '油猴脚本', group: 'tools' },
-  { id: 'vscode', label: 'VSCode插件', group: 'tools' },
-  { id: 'desktop', label: '桌面工具', group: 'tools' },
-  { id: 'devtools', label: '开发工具', group: 'tools' },
+  { id: 'extensions', label: '浏览器插件', group: 'tools', icon: 'blocks' },
+  { id: 'userscripts', label: '油猴脚本', group: 'tools', icon: 'scroll' },
+  { id: 'vscode', label: 'VSCode插件', group: 'tools', icon: 'code' },
+  { id: 'desktop', label: '桌面工具', group: 'tools', icon: 'monitor' },
+  { id: 'devtools', label: '开发工具', group: 'tools', icon: 'wrench' },
 ];
 
 export const SECTION_IDS = SECTIONS.map((section) => section.id);
@@ -54,6 +96,7 @@ export interface GraphEntry {
   href: string;
   meta?: string;
   external?: boolean;
+  icon: IconName;
   /** 展开叶子后显示的下一层节点, 为空时叶子不显示展开按钮 */
   details: GraphDetail[];
 }

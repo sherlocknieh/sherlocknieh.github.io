@@ -9,6 +9,7 @@
 - 有两套正交状态：`focus`（取景到哪）和 `collapsed`（哪些子节点收起）。
 - **点击空白 / 总览只清空 `focus`，绝不改 `collapsed`**。
 - 叶子主体只负责聚焦与展开，**跳转由右侧独立的箭头按钮完成**；详情节点本身是链接。
+- 每个节点左侧都有图标，图标名由 `ICON_NAMES` 限定，图形映射集中在 `src/lib/icons.tsx`。
 - 渲染哪些节点、连哪些线、取景框哪些节点，全部由 `GraphCanvas` 里的一个 `view` memo 同时产出，不要在别处另写一份可见性判断。
 
 ## 文件地图
@@ -16,7 +17,8 @@
 | 文件 | 职责 |
 | --- | --- |
 | `src/pages/index.astro` | 读内容集合 → 生成 `GraphEntry[]`；排序；映射 `links` / `screenshots`；`profile`；无脚本导航 |
-| `src/lib/graph.ts` | 分组/分类的静态维度、`GraphEntry` / `GraphDetail` 类型、`collapsed` 键、默认收起状态 |
+| `src/lib/graph.ts` | 分组/分类的静态维度与图标名、`GraphEntry` / `GraphDetail` / `IconName` 类型、`collapsed` 键、默认收起状态 |
+| `src/lib/icons.tsx` | `IconName` → Lucide 图标的映射与 `NodeIcon` 组件 |
 | `src/lib/graph-layout.ts` | 节点尺寸、列坐标、纵向堆叠、`buildGraph`、`rectOf`、`unionRect` |
 | `src/components/NodeGraph.tsx` | 交互状态、`focus`/`toggle`、节点与连线派生、视口取景与动画 |
 | `src/styles/graph.css` | 卡片、跳转按钮、详情缩略图、连线、总览按钮样式 |
@@ -47,15 +49,16 @@
 
 `index.astro` 把内容转换成 `GraphEntry`：
 
-| 来源 | `id` | `group` | `section` | `href` | `external` | 详情 |
-| --- | --- | --- | --- | --- | --- | --- |
-| 项目 | `project-${集合 id}` | frontmatter `group` | frontmatter `category` | frontmatter `href` | `true` | `links` + `screenshots` |
-| 文章 | `post-${集合 id}` | 固定 `writing` | 无 | `/posts/${id}` | `false` | `links` + `screenshots` |
+| 来源 | `id` | `group` | `section` | `href` | `external` | `icon` | 详情 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 项目 | `project-${集合 id}` | frontmatter `group` | frontmatter `category` | frontmatter `href` | `true` | frontmatter `icon` | `links` + `screenshots` |
+| 文章 | `post-${集合 id}` | 固定 `writing` | 无 | `/posts/${id}` | `false` | frontmatter `icon` | `links` + `screenshots` |
 
 - 项目排序：`GROUP_IDS` 顺序 → `SECTION_IDS` 顺序 → frontmatter `order`。
 - 文章排序：日期倒序。
 - `section` 的顺序即画布纵向顺序；`GROUPS` 的顺序即分组纵向顺序。
 - 节点的 `id` 会直接作为 React Flow 节点 id，必须全局唯一；边 id 使用 `edge-${entry.id}`。
+- `icon` 取 `ICON_NAMES` 中的值，缺省为 `file`；分组与分类的图标写在 `GROUPS` / `SECTIONS`，根节点固定用 `compass`。
 
 ### 叶子详情
 
@@ -291,7 +294,8 @@ React Flow 自身限制 `minZoom=0.2`、`maxZoom=1.6`。
 ## 卡片与样式
 
 - 根、分组、分类共用一个 `CardNode`；叶子用 `LeafNode`；详情用 `DetailNode`。
-- `CardData` 字段：`kind`、`target`、`label`、`hint?`、`count`、`active`、`open`。
+- `CardData` 字段：`kind`、`target`、`icon`、`label`、`hint?`、`count`、`active`、`open`；`LeafData` 额外带 `href` / `meta` / `external`。
+- 所有卡片左侧统一渲染 `.node-icon` 图标底座；图标来自 `NodeIcon`，尺寸按根/分组/分类/叶子逐级微调。
 - 叶子卡片：
   - 主体（`node-main`）只聚焦与展开，不是链接。
   - 右侧箭头按钮（`node-jump`）负责跳转。
@@ -308,6 +312,7 @@ React Flow 自身限制 `minZoom=0.2`、`maxZoom=1.6`。
 | 想改什么 | 改哪里 |
 | --- | --- |
 | 新增项目/文章 | 往 `src/content/projects` 或 `posts` 加 Markdown，填 frontmatter；不需要坐标 |
+| 换节点图标 | frontmatter 的 `icon`；新增图标名先加到 `graph.ts` 的 `ICON_NAMES`，再到 `icons.tsx` 映射 |
 | 给叶子加相关链接/截图 | frontmatter 的 `links` / `screenshots`，截图放到 `public/` 下 |
 | 调整分组名称、顺序、提示 | `src/lib/graph.ts` 的 `GROUPS` / `GROUP_IDS` |
 | 新增或调整分类 | `src/lib/graph.ts` 的 `SECTIONS`；条目 frontmatter 的 `category` |
@@ -332,3 +337,4 @@ React Flow 自身限制 `minZoom=0.2`、`maxZoom=1.6`。
 10. **未知分类在构建期报错**，不要静默跳过，否则条目会从画布上消失。
 11. **详情节点必须走布局结果**：渲染 `leaf.details`，不要直接遍历 `entry.details`，否则收起时会被错误渲染。
 12. **叶子主体永远不是链接**：跳转只走 `node-jump`，详情跳转只走详情卡片；不要给 `.node-card--leaf` 套 `<a>`。
+13. **图标名必须同时存在于 `ICON_NAMES` 和 `icons.tsx` 的映射表**。前者管内容校验，后者是 `Record<IconName, LucideIcon>`，缺一个会在类型检查时报错。

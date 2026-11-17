@@ -72,6 +72,7 @@ date: 2026-01-01
 description: 可选, 用于 meta description
 math: true      # 可选, 需要公式时开启 MathJax
 mermaid: true   # 可选, 需要流程图时开启 Mermaid
+icon: sigma     # 节点图标, 可选取值见 src/lib/graph.ts 的 ICON_NAMES
 links:          # 可选, 叶子展开后的相关链接
   - label: 相关文章
     href: https://example.com
@@ -94,6 +95,7 @@ tags: [Astro]
 group: tools           # apps | lab | tools | writing | about
 category: extensions   # 仅 tools 需要: extensions | userscripts | vscode | desktop | devtools
 order: 2         # 同分类内的排序
+icon: app-window # 节点图标, 可选取值见 src/lib/graph.ts 的 ICON_NAMES
 links:           # 可选, 叶子展开后的相关链接
   - label: 在线演示
     href: https://example.com
@@ -103,8 +105,9 @@ screenshots:     # 可选, 叶子展开后的截图, src 指向 public/ 下的�
 ---
 ```
 
-分组与分类的 id、标签、归属定义在 `src/lib/graph.ts` 的 `GROUPS` 与 `SECTIONS` 里,
+分组与分类的 id、标签、归属、图标定义在 `src/lib/graph.ts` 的 `GROUPS` 与 `SECTIONS` 里,
 新增分类改这一处即可; `category` 必须属于声明的 `group`, 否则构建期报错。
+图标名由 `ICON_NAMES` 限定, 具体图形在 `src/lib/icons.tsx` 映射; 缺省时用 `file`。
 
 ## 页面
 

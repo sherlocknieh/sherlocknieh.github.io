@@ -1,6 +1,7 @@
 ---
 title: 公式测试
 date: 2025-09-04
+icon: sigma
 description: MathJax 行内与块级公式渲染验证
 math: true
 ---

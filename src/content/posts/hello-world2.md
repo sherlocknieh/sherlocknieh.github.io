@@ -1,6 +1,7 @@
 ---
 title: 图表测试
 date: 2025-09-23
+icon: chart-line
 description: Mermaid 流程图渲染验证
 mermaid: true
 ---
