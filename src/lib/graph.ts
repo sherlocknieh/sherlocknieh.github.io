@@ -55,9 +55,12 @@ export interface GraphEntry {
 export const groupKey = (id: GroupId) => id;
 export const sectionKey = (group: GroupId, section: string) => `${group}/${section}`;
 
-/** 默认收起所有分类的条目: 画布一进来只展开到分类这一级 */
+/** 默认只展开到二级: 根与分组可见, 分组下的分类与条目都收起 */
 export function defaultCollapsed(): Set<string> {
-  return new Set(SECTIONS.map((section) => sectionKey(section.group, section.id)));
+  return new Set([
+    ...GROUPS.map((group) => groupKey(group.id)),
+    ...SECTIONS.map((section) => sectionKey(section.group, section.id)),
+  ]);
 }
 
 export function groupById(id: GroupId): GraphGroupMeta {

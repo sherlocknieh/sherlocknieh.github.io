@@ -38,13 +38,14 @@ import {
 
 export interface GraphProfile {
   name: string;
-  role: string;
 }
 
 interface RootData extends Record<string, unknown> {
   kind: 'root';
   label: string;
-  subtitle: string;
+  /** 根节点收起时整棵树只剩它自己 */
+  open: boolean;
+  count: number;
 }
 
 interface GroupData extends Record<string, unknown> {
@@ -82,12 +83,14 @@ const GraphInteraction = createContext<{
   focusSection: (group: GroupId, section: string) => void;
   toggleGroup: (id: GroupId) => void;
   toggleSection: (group: GroupId, section: string) => void;
+  toggleRoot: () => void;
   reset: () => void;
 }>({
   focusGroup: () => {},
   focusSection: () => {},
   toggleGroup: () => {},
   toggleSection: () => {},
+  toggleRoot: () => {},
   reset: () => {},
 });
 
@@ -128,14 +131,25 @@ const ResetIcon = () => (
 
 function RootNode({ data }: NodeProps) {
   const d = data as unknown as RootData;
-  const { reset } = useContext(GraphInteraction);
+  const { reset, toggleRoot } = useContext(GraphInteraction);
 
   return (
-    <button type="button" className="node-card node-card--root" onClick={reset} title="回到总览">
+    <div className="node-card node-card--root">
       <Handle type="source" position={Position.Right} className="node-handle" isConnectable={false} />
-      <span className="node-name">{d.label}</span>
-      <span className="node-role">{d.subtitle}</span>
-    </button>
+      <button type="button" className="node-main" onClick={reset} title="回到总览">
+        <span className="node-name">{d.label}</span>
+      </button>
+      <button
+        type="button"
+        className={`node-toggle${d.open ? ' is-open' : ''}`}
+        aria-expanded={d.open}
+        aria-label={d.open ? `收起 ${d.count} 个分组` : `展开 ${d.count} 个分组`}
+        title={d.open ? '收起' : `展开 ${d.count} 个分组`}
+        onClick={toggleRoot}
+      >
+        {d.open ? <MinusIcon /> : <span className="node-count">{d.count}</span>}
+      </button>
+    </div>
   );
 }
 
@@ -206,6 +220,8 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
 
   // 默认展开到三级: 根 → 分组 → 分类, 分类下的条目默认收起, 由节点上的按钮展开
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(defaultCollapsed);
+  // 根节点收起时整棵树只剩根, 与分组收起互不影响
+  const [rootOpen, setRootOpen] = useState(true);
 
   const model = useMemo(() => buildGraph(entries, collapsed), [entries, collapsed]);
 
@@ -239,9 +255,12 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     });
   }, []);
 
+  const toggleRoot = useCallback(() => setRootOpen((open) => !open), []);
+
   const reset = useCallback(() => {
     setFocus(null);
     setCollapsed(defaultCollapsed());
+    setRootOpen(true);
   }, []);
 
   /** 全部节点的画布矩形, 视口计算只依赖它, 不读浏览器测量值 */
@@ -269,6 +288,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
   /** 取景范围: 无焦点时是整棵树, 聚焦分组时是该分组这一支, 聚焦分类时再收窄到该分类 */
   const visibleIds = useMemo(() => {
     const ids = ['root'];
+    if (!rootOpen) return ids;
     for (const group of model.groups) {
       const gid = group.meta.id;
       if (focus && focus.group !== gid) continue;
@@ -283,7 +303,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
       }
     }
     return ids;
-  }, [collapsed, focus, model]);
+  }, [collapsed, focus, model, rootOpen]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -340,7 +360,8 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
         data: {
           kind: 'root',
           label: profile.name,
-          subtitle: profile.role,
+          open: rootOpen,
+          count: model.groups.length,
         },
         draggable: false,
       },
@@ -369,7 +390,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
       });
     };
 
-    for (const group of model.groups) {
+    for (const group of rootOpen ? model.groups : []) {
       const gid = group.meta.id;
       const id = groupNodeId(gid);
       const rect = rects.get(id)!;
@@ -435,7 +456,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     }
 
     return list;
-  }, [collapsed, focus, model, profile, rects]);
+  }, [collapsed, focus, model, profile, rects, rootOpen]);
 
   const edges = useMemo<Edge[]>(() => {
     const list: Edge[] = [];
@@ -449,7 +470,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
       });
     };
 
-    for (const group of model.groups) {
+    for (const group of rootOpen ? model.groups : []) {
       const gid = group.meta.id;
       const active = focus?.group === gid;
 
@@ -478,11 +499,11 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     }
 
     return list;
-  }, [collapsed, focus, model]);
+  }, [collapsed, focus, model, rootOpen]);
 
   return (
     <GraphInteraction.Provider
-      value={{ focusGroup, focusSection, toggleGroup, toggleSection, reset }}
+      value={{ focusGroup, focusSection, toggleGroup, toggleSection, toggleRoot, reset }}
     >
       <div className="graph-shell">
         <div className="graph-canvas" ref={canvasRef}>
