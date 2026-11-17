@@ -292,10 +292,8 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     [collapsed, pinNode, rootOpen],
   );
 
-  const reset = useCallback(() => {
-    setFocus(null);
-    setCollapsed(defaultCollapsed());
-  }, []);
+  /** 回到总览只清空聚焦, 已展开的节点保持原状 */
+  const backToOverview = useCallback(() => setFocus(null), []);
 
   /**
    * 一次遍历同时产出渲染用的 nodes/edges 与取景范围.
@@ -558,13 +556,13 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
             zoomOnDoubleClick={false}
             minZoom={0.2}
             maxZoom={1.6}
-            onPaneClick={reset}
+            onPaneClick={backToOverview}
             proOptions={{ hideAttribution: true }}
           >
             <Background variant={BackgroundVariant.Dots} gap={22} size={1} />
             {focus && (
               <Panel position="top-right">
-                <button type="button" className="graph-reset" onClick={reset}>
+                <button type="button" className="graph-reset" onClick={backToOverview}>
                   <ResetIcon />
                   总览
                 </button>
