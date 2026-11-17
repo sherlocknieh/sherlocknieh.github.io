@@ -356,17 +356,24 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     setRootOpen(true);
   }, []);
 
-  /** 取景范围: 无焦点时是整棵树, 聚焦分组时是该分组这一支, 聚焦分类时再收窄到该分类 */
+  /**
+   * 取景范围: 无焦点时是整棵树, 聚焦时只有焦点节点及其子节点.
+   * 上层节点不进取景, 否则根总是被框进来, 焦点这一支就只能缩得很小
+   */
   const visibleIds = useMemo(() => {
-    const ids = ['root'];
-    if (!rootOpen) return ids;
+    if (!rootOpen) return ['root'];
+    const ids: string[] = [];
+    const showRoot = !focus || focus.group === 'root';
+    if (showRoot) ids.push('root');
     for (const group of model.groups) {
       const gid = group.meta.id;
-      // 聚焦根节点就是看整棵树, 其余焦点只留自己这一支
       if (focus && focus.group !== 'root' && focus.group !== gid) continue;
-      ids.push(groupNodeId(gid));
+      const showGroup = showRoot || !focus?.section;
+      if (showGroup) ids.push(groupNodeId(gid));
       if (collapsed.has(groupKey(gid))) continue;
-      for (const leaf of group.leaves) ids.push(leaf.entry.id);
+      if (!focus?.section) {
+        for (const leaf of group.leaves) ids.push(leaf.entry.id);
+      }
       for (const section of group.sections) {
         if (focus?.section && focus.section !== section.meta.id) continue;
         ids.push(sectionNodeId(gid, section.meta.id));
@@ -397,9 +404,10 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
       1.1,
     );
 
-    // 整棵树装得下就完整取景; 装不下时锁定最小缩放并从树顶开始显示, 其余靠拖拽查看
-    const zoom = Math.max(fitZoom, 0.55);
-    const fits = fitZoom >= 0.55;
+    // 取景范围就是焦点节点及其子节点, 整体居中铺满; 聚焦时允许比总览更小的缩放, 优先让整支进视野
+    const minZoom = focus ? 0.2 : 0.55;
+    const zoom = Math.max(fitZoom, minZoom);
+    const fits = fitZoom >= minZoom;
 
     // 聚焦(含收起后退回上层)要重新取景; 只增减子节点时保留缩放, 由 pin 把被点节点钉在原处
     const focusChanged = prevFocus.current !== focus;
@@ -409,16 +417,6 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     const pinned = pin ? rects.get(pin.id) : undefined;
     const current = pinned ? getViewport() : null;
 
-    // 聚焦时把焦点节点放在垂直居中、水平偏左的位置, 右侧留给展开出来的内容
-    const anchorId = focus
-      ? focus.group === 'root'
-        ? 'root'
-        : focus.section
-          ? sectionNodeId(focus.group, focus.section)
-          : groupNodeId(focus.group)
-      : null;
-    const anchor = anchorId ? rects.get(anchorId) : undefined;
-
     let viewport;
     if (pin && pinned && current) {
       // 只平移不缩放: 始终保留当前缩放, 被点节点停在原屏幕位置, 超出的内容靠拖动查看
@@ -426,24 +424,6 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
         x: pin.x - (pinned.x + pinned.width / 2) * current.zoom,
         y: pin.y - (pinned.y + pinned.height / 2) * current.zoom,
         zoom: current.zoom,
-      };
-    } else if (anchor) {
-      // 焦点节点固定在水平 32%、垂直居中; 缩放按它左侧残留、右侧内容与高度收紧, 保证边缘不被裁
-      const anchorCx = anchor.x + anchor.width / 2;
-      const anchorCy = anchor.y + anchor.height / 2;
-      const anchorZoom = Math.max(
-        Math.min(
-          (width * 0.32) / Math.max(anchorCx - box.x, 1),
-          (width * 0.68) / Math.max(box.x + box.width - anchorCx, 1),
-          (height - margin * 2) / Math.max(box.height, 1),
-          1.1,
-        ),
-        0.55,
-      );
-      viewport = {
-        x: width * 0.32 - anchorCx * anchorZoom,
-        y: height / 2 - anchorCy * anchorZoom,
-        zoom: anchorZoom,
       };
     } else {
       viewport = {
