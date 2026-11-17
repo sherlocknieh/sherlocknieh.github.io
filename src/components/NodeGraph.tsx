@@ -330,9 +330,13 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
   );
 
   const toggleRoot = useCallback(() => {
-    pinNode('root');
-    // 根节点收起后整棵树只剩它自己, 焦点不再有意义
-    if (rootOpen) setFocus(null);
+    if (rootOpen) {
+      // 收起后整棵树只剩根: 焦点没有意义, 视野也回到中央, 不钉住被点位置
+      pinRef.current = null;
+      setFocus(null);
+    } else {
+      pinNode('root');
+    }
     setRootOpen((open) => !open);
   }, [pinNode, rootOpen]);
 
