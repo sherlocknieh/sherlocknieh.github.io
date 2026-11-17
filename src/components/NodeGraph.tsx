@@ -19,6 +19,7 @@ import {
   type Edge,
   type Node,
   type NodeProps,
+  type Viewport,
 } from '@xyflow/react';
 import {
   NODE_SIZE,
@@ -220,6 +221,8 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
   const canvasRef = useRef<HTMLDivElement>(null);
   const didInit = useRef(false);
   const prevFocus = useRef<Focus | null>(null);
+  const animRef = useRef<number | null>(null);
+  const animTargetRef = useRef<Viewport | null>(null);
   const { getViewport, setViewport } = useReactFlow();
 
   // 默认展开到三级: 根 → 分组 → 分类, 分类下的条目默认收起, 由节点上的按钮展开
@@ -439,12 +442,77 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
       };
     }
 
-    // 首次取景直接定位, 此后的聚焦/缩放变化用动画过渡, 让平移过程可见
-    // 后台标签页里动画会被暂停, 此时退化为瞬时定位, 否则画布会停在默认位置
+    // 视口过渡自己算: React Flow 的 duration 走 d3 的 smooth zoom, 远距离平移时会先缩小再放大,
+    // 这里改成屏幕中心的世界坐标线性插值 + 缩放对数插值, 缩放只朝目标方向单调变化
     const animate = didInit.current && document.visibilityState === 'visible';
     didInit.current = true;
-    void setViewport(viewport, { duration: animate ? 520 : 0 });
+    if (animRef.current !== null) cancelAnimationFrame(animRef.current);
+    if (!animate) {
+      animRef.current = null;
+      animTargetRef.current = null;
+      void setViewport(viewport, { duration: 0 });
+      return;
+    }
+
+    // 后台标签页里 requestAnimationFrame 会被暂停, 所以只在页面可见时才走这段
+    animTargetRef.current = viewport;
+    const start = getViewport();
+    const centerOf = (vp: { x: number; y: number; zoom: number }) => ({
+      x: (width / 2 - vp.x) / vp.zoom,
+      y: (height / 2 - vp.y) / vp.zoom,
+    });
+    const from = centerOf(start);
+    const to = centerOf(viewport);
+    const logFrom = Math.log(start.zoom);
+    const logTo = Math.log(viewport.zoom);
+    const started = performance.now();
+    const duration = 520;
+
+    const step = (now: number) => {
+      const t = Math.min(1, (now - started) / duration);
+      const eased = t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2;
+      const zoom = Math.exp(logFrom + (logTo - logFrom) * eased);
+      const cx = from.x + (to.x - from.x) * eased;
+      const cy = from.y + (to.y - from.y) * eased;
+      void setViewport(
+        { x: width / 2 - cx * zoom, y: height / 2 - cy * zoom, zoom },
+        { duration: 0 },
+      );
+      animRef.current = t < 1 ? requestAnimationFrame(step) : null;
+      if (t >= 1) animTargetRef.current = null;
+    };
+    animRef.current = requestAnimationFrame(step);
   }, [focus, getViewport, rects, resizeTick, setViewport, visibleIds]);
+
+  // 用户主动拖拽或滚轮缩放时中断取景过渡, 避免相机和手势互相拉扯
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const interrupt = () => {
+      if (animRef.current === null) return;
+      cancelAnimationFrame(animRef.current);
+      animRef.current = null;
+      animTargetRef.current = null;
+    };
+    // 页面切到后台时 requestAnimationFrame 会停摆, 直接把过渡落到终点, 免得画布停在半路
+    const settle = () => {
+      if (document.visibilityState === 'visible' || animRef.current === null) return;
+      cancelAnimationFrame(animRef.current);
+      animRef.current = null;
+      const target = animTargetRef.current;
+      animTargetRef.current = null;
+      if (target) void setViewport(target, { duration: 0 });
+    };
+    canvas.addEventListener('pointerdown', interrupt);
+    canvas.addEventListener('wheel', interrupt, { passive: true });
+    document.addEventListener('visibilitychange', settle);
+    return () => {
+      canvas.removeEventListener('pointerdown', interrupt);
+      canvas.removeEventListener('wheel', interrupt);
+      document.removeEventListener('visibilitychange', settle);
+      if (animRef.current !== null) cancelAnimationFrame(animRef.current);
+    };
+  }, [setViewport]);
 
   // 画布尺寸变化后重新取景, 避免节点被裁到视野外
   useEffect(() => {
