@@ -26,9 +26,10 @@ const AXIS = {
   leafX: 1030,
   /** 分组没有分类时, 叶子直接贴在分组右侧 */
   directLeafX: 690,
-  groupGapY: 56,
-  sectionGapY: 96,
-  leafGapY: 78,
+  /** 纵向间距按节点高度取比例: 分组大一级, 空档也略大 */
+  groupGapY: 44,
+  sectionGapY: 20,
+  leafGapY: 74,
 } as const;
 
 export interface Point {
