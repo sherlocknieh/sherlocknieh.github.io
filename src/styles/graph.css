@@ -116,23 +116,6 @@
   border-color: var(--accent);
 }
 
-.node-card--root {
-  justify-content: center;
-  gap: 8px;
-  padding: 0 12px 0 16px;
-  border-radius: 22px;
-  background: radial-gradient(circle at 50% 0%, rgba(94, 234, 212, 0.1), var(--surface) 68%);
-}
-
-.node-card--root .node-main {
-  flex: 0 1 auto;
-}
-
-.node-name {
-  font-size: 14px;
-  font-weight: 650;
-}
-
 .node-card--group {
   justify-content: flex-start;
   padding: 0 12px 0 16px;

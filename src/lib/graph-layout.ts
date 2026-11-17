@@ -12,7 +12,7 @@ import {
 
 /** 节点尺寸是布局与渲染的唯一来源, 样式层不再重复声明宽高 */
 export const NODE_SIZE = {
-  root: { width: 132, height: 84 },
+  root: { width: 208, height: 64 },
   category: { width: 208, height: 64 },
   section: { width: 188, height: 56 },
   leaf: { width: 268, height: 60 },
@@ -26,7 +26,7 @@ const AXIS = {
   leafX: 1030,
   /** 分组没有分类时, 叶子直接贴在分组右侧 */
   directLeafX: 690,
-  groupGapY: 132,
+  groupGapY: 56,
   sectionGapY: 96,
   leafGapY: 78,
 } as const;

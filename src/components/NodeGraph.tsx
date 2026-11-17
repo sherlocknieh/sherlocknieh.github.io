@@ -134,10 +134,10 @@ function RootNode({ data }: NodeProps) {
   const { reset, toggleRoot } = useContext(GraphInteraction);
 
   return (
-    <div className="node-card node-card--root">
+    <div className="node-card node-card--group">
       <Handle type="source" position={Position.Right} className="node-handle" isConnectable={false} />
       <button type="button" className="node-main" onClick={reset} title="回到总览">
-        <span className="node-name">{d.label}</span>
+        <span className="node-group-label">{d.label}</span>
       </button>
       <button
         type="button"
@@ -215,7 +215,6 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
   const [focus, setFocus] = useState<Focus | null>(null);
   const [resizeTick, setResizeTick] = useState(0);
   const canvasRef = useRef<HTMLDivElement>(null);
-  const didInit = useRef(false);
   const { setViewport } = useReactFlow();
 
   // 默认展开到三级: 根 → 分组 → 分类, 分类下的条目默认收起, 由节点上的按钮展开
@@ -228,10 +227,23 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
   /** 聚焦是幂等的: 重复点击同一节点保持选中, 取消选中只走总览按钮或空白处 */
   const focusGroup = useCallback((id: GroupId) => {
     setFocus({ group: id });
+    // 聚焦时自动展开这一支, 否则聚焦后看不到内容
+    setCollapsed((current) => {
+      if (!current.has(groupKey(id))) return current;
+      const next = new Set(current);
+      next.delete(groupKey(id));
+      return next;
+    });
   }, []);
 
   const focusSection = useCallback((group: GroupId, section: string) => {
     setFocus({ group, section });
+    setCollapsed((current) => {
+      const next = new Set(current);
+      next.delete(groupKey(group));
+      next.delete(sectionKey(group, section));
+      return next;
+    });
   }, []);
 
   /** 分组只控制分类是否可见, 分类自身的条目展开状态保持不变 */
@@ -329,16 +341,44 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     const zoom = Math.max(fitZoom, 0.55);
     const fits = fitZoom >= 0.55;
 
-    void setViewport(
-      {
+    // 聚焦时把焦点节点放在垂直居中、水平偏左的位置, 右侧留给展开出来的内容
+    const anchorId = focus
+      ? focus.section
+        ? sectionNodeId(focus.group, focus.section)
+        : groupNodeId(focus.group)
+      : null;
+    const anchor = anchorId ? rects.get(anchorId) : undefined;
+
+    let viewport;
+    if (anchor) {
+      // 焦点节点固定在水平 32%、垂直居中; 缩放按它左侧残留、右侧内容与高度收紧, 保证边缘不被裁
+      const anchorCx = anchor.x + anchor.width / 2;
+      const anchorCy = anchor.y + anchor.height / 2;
+      const anchorZoom = Math.max(
+        Math.min(
+          (width * 0.32) / Math.max(anchorCx - box.x, 1),
+          (width * 0.68) / Math.max(box.x + box.width - anchorCx, 1),
+          (height - margin * 2) / Math.max(box.height, 1),
+          1.1,
+        ),
+        0.55,
+      );
+      viewport = {
+        x: width * 0.32 - anchorCx * anchorZoom,
+        y: height / 2 - anchorCy * anchorZoom,
+        zoom: anchorZoom,
+      };
+    } else {
+      viewport = {
         x: width / 2 - (box.x + box.width / 2) * zoom,
         y: fits ? height / 2 - (box.y + box.height / 2) * zoom : margin - box.y * zoom,
         zoom,
-      },
-      { duration: didInit.current ? 520 : 0 },
-    );
-    didInit.current = true;
-  }, [rects, resizeTick, setViewport, visibleIds]);
+      };
+    }
+
+    // 同步设置视口: 动画依赖下一帧, 后台标签页里会被暂停, 结果就是画布停在默认位置
+    void setViewport(viewport);
+  }, [focus, rects, resizeTick, setViewport, visibleIds]);
 
   // 画布尺寸变化后重新取景, 避免节点被裁到视野外
   useEffect(() => {
