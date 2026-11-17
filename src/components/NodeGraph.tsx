@@ -211,14 +211,13 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
 
   const model = useMemo(() => buildGraph(entries, collapsed), [entries, collapsed]);
 
+  /** 聚焦是幂等的: 重复点击同一节点保持选中, 取消选中只走总览按钮或空白处 */
   const focusGroup = useCallback((id: GroupId) => {
-    setFocus((current) => (current?.group === id && !current.section ? null : { group: id }));
+    setFocus({ group: id });
   }, []);
 
   const focusSection = useCallback((group: GroupId, section: string) => {
-    setFocus((current) =>
-      current?.group === group && current.section === section ? { group } : { group, section },
-    );
+    setFocus({ group, section });
   }, []);
 
   /** 分组只控制分类是否可见, 分类自身的条目展开状态保持不变 */
