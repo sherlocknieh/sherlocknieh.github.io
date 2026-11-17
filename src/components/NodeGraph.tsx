@@ -19,7 +19,6 @@ import {
   type Edge,
   type Node,
   type NodeProps,
-  type Viewport,
 } from '@xyflow/react';
 import {
   NODE_SIZE,
@@ -30,6 +29,7 @@ import {
   type Rect,
 } from '../lib/graph-layout';
 import {
+  ROOT_KEY,
   defaultCollapsed,
   groupKey,
   sectionKey,
@@ -41,28 +41,16 @@ export interface GraphProfile {
   name: string;
 }
 
-interface RootData extends Record<string, unknown> {
-  kind: 'root';
+/** 根、分组、分类共用同一套卡片数据, kind 只影响样式与文案 */
+interface CardData extends Record<string, unknown> {
+  kind: 'root' | 'group' | 'section';
+  /** 根节点填 'root', 分类节点再带 section */
+  group: 'root' | GroupId;
+  section?: string;
   label: string;
-  /** 根节点收起时整棵树只剩它自己 */
-  open: boolean;
+  hint?: string;
   count: number;
   active: boolean;
-}
-
-interface GroupData extends Record<string, unknown> {
-  kind: 'group' | 'section';
-  /** 分组 id 或分类 id */
-  id: string;
-  /** 分类所属的分组, 分组节点填自身 id */
-  owner: GroupId;
-  label: string;
-  hint: string;
-  count: number;
-  active: boolean;
-  /** 是否还有可展开的条目, 没有条目的节点不显示展开按钮 */
-  expandable: boolean;
-  /** 条目当前是否展开 */
   open: boolean;
 }
 
@@ -74,29 +62,19 @@ interface LeafData extends Record<string, unknown> {
   external?: boolean;
 }
 
-type FlowNode = Node<RootData | GroupData | LeafData>;
+type FlowNode = Node<CardData | LeafData>;
 
-/** 聚焦目标: 根节点、分组或分组下的分类, 只影响取景, 不影响展开状态 */
+/** 聚焦目标: 根、分组或分类, 只影响取景, 不影响展开状态 */
 type Focus = { group: 'root'; section?: undefined } | { group: GroupId; section?: string };
+
+const sameFocus = (a: Focus | null, b: Focus | null) =>
+  a === b || (!!a && !!b && a.group === b.group && a.section === b.section);
 
 /** 节点卡片通过 context 改画布状态, 避免把回调塞进可序列化的 data 里 */
 const GraphInteraction = createContext<{
-  focusRoot: () => void;
-  focusGroup: (id: GroupId) => void;
-  focusSection: (group: GroupId, section: string) => void;
-  toggleGroup: (id: GroupId) => void;
-  toggleSection: (group: GroupId, section: string) => void;
-  toggleRoot: () => void;
-  reset: () => void;
-}>({
-  focusRoot: () => {},
-  focusGroup: () => {},
-  focusSection: () => {},
-  toggleGroup: () => {},
-  toggleSection: () => {},
-  toggleRoot: () => {},
-  reset: () => {},
-});
+  focus: (group: 'root' | GroupId, section?: string) => void;
+  toggle: (group: 'root' | GroupId, section?: string) => void;
+}>({ focus: () => {}, toggle: () => {} });
 
 const groupNodeId = (id: GroupId) => `group-${id}`;
 const sectionNodeId = (group: GroupId, section: string) => `section-${group}-${section}`;
@@ -133,58 +111,37 @@ const ResetIcon = () => (
   </svg>
 );
 
-function RootNode({ data }: NodeProps) {
-  const d = data as unknown as RootData;
-  const { focusRoot, toggleRoot } = useContext(GraphInteraction);
+/** 一张卡片同时服务根、分组与分类: 根没有入边, 其余节点都挂在父节点右侧 */
+function CardNode({ data }: NodeProps) {
+  const d = data as unknown as CardData;
+  const { focus, toggle } = useContext(GraphInteraction);
+  const isRoot = d.kind === 'root';
+  const unit = isRoot ? '个分组' : '个子节点';
 
   return (
-    <div className={`node-card node-card--group${d.active ? ' is-active' : ''}`}>
-      <Handle type="source" position={Position.Right} className="node-handle" isConnectable={false} />
-      <button type="button" className="node-main" onClick={focusRoot} title="聚焦根节点">
+    <div className={`node-card node-card--${d.kind}${d.active ? ' is-active' : ''}`} title={d.hint}>
+      {!isRoot && (
+        <Handle type="target" position={Position.Left} className="node-handle" isConnectable={false} />
+      )}
+      <button
+        type="button"
+        className="node-main"
+        onClick={() => focus(d.group, d.section)}
+        title={isRoot ? '聚焦根节点' : undefined}
+      >
         <span className="node-group-label">{d.label}</span>
       </button>
+      {/* 计数与展开按钮合为一体: 收起时显示子节点数, 展开后变成收起图标 */}
       <button
         type="button"
         className={`node-toggle${d.open ? ' is-open' : ''}`}
         aria-expanded={d.open}
-        aria-label={d.open ? `收起 ${d.count} 个分组` : `展开 ${d.count} 个分组`}
-        title={d.open ? '收起' : `展开 ${d.count} 个分组`}
-        onClick={toggleRoot}
+        aria-label={`${d.open ? '收起' : '展开'} ${d.count} ${unit}`}
+        title={d.open ? '收起' : `展开 ${d.count} ${isRoot ? '个分组' : '项'}`}
+        onClick={() => toggle(d.group, d.section)}
       >
         {d.open ? <MinusIcon /> : <span className="node-count">{d.count}</span>}
       </button>
-    </div>
-  );
-}
-
-function GroupNode({ data }: NodeProps) {
-  const d = data as unknown as GroupData;
-  const { focusGroup, focusSection, toggleGroup, toggleSection } = useContext(GraphInteraction);
-  const isSection = d.kind === 'section';
-
-  return (
-    <div className={`node-card node-card--${d.kind}${d.active ? ' is-active' : ''}`} title={d.hint}>
-      <Handle type="target" position={Position.Left} className="node-handle" isConnectable={false} />
-      <button
-        type="button"
-        className="node-main"
-        onClick={() => (isSection ? focusSection(d.owner, d.id) : focusGroup(d.owner))}
-      >
-        <span className="node-group-label">{d.label}</span>
-      </button>
-      {d.expandable && (
-        // 计数与展开按钮合为一体: 收起时显示子节点数, 展开后变成收起图标
-        <button
-          type="button"
-          className={`node-toggle${d.open ? ' is-open' : ''}`}
-          aria-expanded={d.open}
-          aria-label={d.open ? `收起 ${d.count} 个子节点` : `展开 ${d.count} 个子节点`}
-          title={d.open ? '收起' : `展开 ${d.count} 项`}
-          onClick={() => (isSection ? toggleSection(d.owner, d.id) : toggleGroup(d.owner))}
-        >
-          {d.open ? <MinusIcon /> : <span className="node-count">{d.count}</span>}
-        </button>
-      )}
       <Handle type="source" position={Position.Right} className="node-handle" isConnectable={false} />
     </div>
   );
@@ -212,23 +169,20 @@ function LeafNode({ data }: NodeProps) {
   );
 }
 
-const nodeTypes = { root: RootNode, category: GroupNode, leaf: LeafNode };
+const nodeTypes = { root: CardNode, category: CardNode, leaf: LeafNode };
 
 function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: GraphProfile }) {
-  // 节点始终全部展开, 点击只改变取景焦点
   const [focus, setFocus] = useState<Focus | null>(null);
   const [resizeTick, setResizeTick] = useState(0);
   const canvasRef = useRef<HTMLDivElement>(null);
   const didInit = useRef(false);
   const prevFocus = useRef<Focus | null>(null);
   const animRef = useRef<number | null>(null);
-  const animTargetRef = useRef<Viewport | null>(null);
   const { getViewport, setViewport } = useReactFlow();
 
-  // 默认展开到三级: 根 → 分组 → 分类, 分类下的条目默认收起, 由节点上的按钮展开
+  // 默认展开到二级: 根与分组可见, 分类和条目都收起; 根收起状态与它们共用 collapsed
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(defaultCollapsed);
-  // 根节点收起时整棵树只剩根, 与分组收起互不影响
-  const [rootOpen, setRootOpen] = useState(true);
+  const rootOpen = !collapsed.has(ROOT_KEY);
 
   const model = useMemo(() => buildGraph(entries, collapsed), [entries, collapsed]);
 
@@ -274,124 +228,206 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     [getViewport, rects],
   );
 
-  /** 根节点与分组同等对待: 点它就把取景锚定到根, 铺开整棵树 */
-  const focusRoot = useCallback(() => {
-    setFocus({ group: 'root' });
-    setRootOpen(true);
-  }, []);
-
-  /** 聚焦是幂等的: 重复点击同一节点保持选中, 取消选中只走总览按钮或空白处 */
-  const focusGroup = useCallback((id: GroupId) => {
-    setFocus({ group: id });
-    // 聚焦时自动展开这一支, 否则聚焦后看不到内容
-    setCollapsed((current) => {
-      if (!current.has(groupKey(id))) return current;
-      const next = new Set(current);
-      next.delete(groupKey(id));
-      return next;
-    });
-  }, []);
-
-  const focusSection = useCallback((group: GroupId, section: string) => {
-    setFocus({ group, section });
-    setCollapsed((current) => {
-      const next = new Set(current);
-      next.delete(groupKey(group));
-      next.delete(sectionKey(group, section));
-      return next;
-    });
-  }, []);
-
-  /** 分组只控制分类是否可见, 分类自身的条目展开状态保持不变 */
-  const toggleGroup = useCallback(
-    (id: GroupId) => {
-      if (collapsed.has(groupKey(id))) {
-        // 展开即聚焦: 取景正好框住这个分组和刚露出的子节点
-        setFocus({ group: id });
-      } else {
-        // 收起时取景退回上一级: 正看着这个分组就回到根节点, 聚焦别处则保持不动
-        pinNode(groupNodeId(id));
-        setFocus((current) => (current?.group === id ? null : current));
-      }
-      setCollapsed((current) => {
-        const next = new Set(current);
-        const key = groupKey(id);
-        if (next.has(key)) next.delete(key);
-        else next.add(key);
-        return next;
-      });
-    },
-    [collapsed, pinNode],
-  );
-
-  const toggleSection = useCallback(
-    (group: GroupId, section: string) => {
-      if (collapsed.has(sectionKey(group, section))) {
-        // 展开即聚焦到该分类, 取景框住它和它的条目
-        setFocus({ group, section });
-      } else {
-        // 收起分类时取景退回到所属分组
-        pinNode(sectionNodeId(group, section));
-        setFocus((current) =>
-          current?.group === group && current.section === section ? { group } : current,
-        );
-      }
-      setCollapsed((current) => {
-        const next = new Set(current);
-        const key = sectionKey(group, section);
-        if (next.has(key)) next.delete(key);
-        else next.add(key);
-        return next;
-      });
-    },
-    [collapsed, pinNode],
-  );
-
-  const toggleRoot = useCallback(() => {
-    if (rootOpen) {
-      // 收起后整棵树只剩根: 焦点没有意义, 视野也回到中央, 不钉住被点位置
-      pinRef.current = null;
-      setFocus(null);
-    } else {
-      // 展开根节点同时聚焦它, 与其他节点"展开即进入"的节奏一致
+  /** 聚焦是幂等的: 重复点击保持选中, 取消选中只走总览按钮或空白处; 聚焦同时展开该节点这一支 */
+  const focusNode = useCallback((group: 'root' | GroupId, section?: string) => {
+    if (group === 'root') {
       setFocus({ group: 'root' });
+      setCollapsed((current) => {
+        if (!current.has(ROOT_KEY)) return current;
+        const next = new Set(current);
+        next.delete(ROOT_KEY);
+        return next;
+      });
+      return;
     }
-    setRootOpen((open) => !open);
-  }, [rootOpen]);
+
+    setFocus(section ? { group, section } : { group });
+    setCollapsed((current) => {
+      const keys = section ? [groupKey(group), sectionKey(group, section)] : [groupKey(group)];
+      if (keys.every((key) => !current.has(key))) return current;
+      const next = new Set(current);
+      for (const key of keys) next.delete(key);
+      return next;
+    });
+  }, []);
+
+  /**
+   * 展开即聚焦, 收起则把取景退回上一级: 分类回到所属分组, 分组或根回到总览,
+   * 焦点在别处时保持不动. 没有焦点变化时靠 pin 保留缩放与位置.
+   */
+  const toggleNode = useCallback(
+    (group: 'root' | GroupId, section?: string) => {
+      if (group === 'root') {
+        pinRef.current = null;
+        if (rootOpen) setFocus(null);
+        else setFocus({ group: 'root' });
+        setCollapsed((current) => {
+          const next = new Set(current);
+          if (next.has(ROOT_KEY)) next.delete(ROOT_KEY);
+          else next.add(ROOT_KEY);
+          return next;
+        });
+        return;
+      }
+
+      const key = section ? sectionKey(group, section) : groupKey(group);
+      if (collapsed.has(key)) {
+        // 展开即聚焦: 取景正好框住这个节点和刚露出的子节点
+        setFocus(section ? { group, section } : { group });
+      } else {
+        pinNode(section ? sectionNodeId(group, section) : groupNodeId(group));
+        setFocus((current) => {
+          if (current?.group !== group) return current;
+          if (!section) return null;
+          return current.section === section ? { group } : current;
+        });
+      }
+      setCollapsed((current) => {
+        const next = new Set(current);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        return next;
+      });
+    },
+    [collapsed, pinNode, rootOpen],
+  );
 
   const reset = useCallback(() => {
     setFocus(null);
     setCollapsed(defaultCollapsed());
-    setRootOpen(true);
   }, []);
 
   /**
-   * 取景范围: 无焦点时是整棵树, 聚焦时只有焦点节点及其子节点.
-   * 上层节点不进取景, 否则根总是被框进来, 焦点这一支就只能缩得很小
+   * 一次遍历同时产出渲染用的 nodes/edges 与取景范围.
+   * 可见性只在这里判断, 避免渲染、连线和取景各写一份规则而漂移.
    */
-  const visibleIds = useMemo(() => {
-    if (!rootOpen) return ['root'];
-    const ids: string[] = [];
+  const view = useMemo(() => {
+    const nodes: FlowNode[] = [];
+    const edges: Edge[] = [];
+    const frameIds: string[] = [];
+
+    const rootRect = rects.get('root')!;
+    nodes.push({
+      id: 'root',
+      type: 'root',
+      position: { x: rootRect.x, y: rootRect.y },
+      style: { width: rootRect.width, height: rootRect.height },
+      data: {
+        kind: 'root',
+        group: 'root',
+        label: profile.name,
+        count: model.groups.length,
+        active: focus?.group === 'root',
+        open: rootOpen,
+      },
+      draggable: false,
+    });
+
+    // 根收起时整棵树只剩根, 取景也只框它
+    if (!rootOpen) return { nodes, edges, frameIds: ['root'] };
+
+    // 总览或聚焦根时根参与取景; 聚焦某一支时不框祖先, 否则这一支会被缩得很小
     const showRoot = !focus || focus.group === 'root';
-    if (showRoot) ids.push('root');
+    if (showRoot) frameIds.push('root');
+
+    const pushLeaf = (leaf: LaidOutLeaf, source: string, highlighted: boolean, framed: boolean) => {
+      const rect = rects.get(leaf.entry.id)!;
+      nodes.push({
+        id: leaf.entry.id,
+        type: 'leaf',
+        position: { x: rect.x, y: rect.y },
+        style: { width: rect.width, height: rect.height },
+        data: {
+          kind: 'leaf',
+          label: leaf.entry.label,
+          href: leaf.entry.href,
+          meta: leaf.entry.meta,
+          external: leaf.entry.external,
+        },
+        draggable: false,
+      });
+      edges.push({
+        id: `edge-${leaf.entry.id}`,
+        source,
+        target: leaf.entry.id,
+        className: highlighted ? 'is-revealed' : undefined,
+      });
+      if (framed) frameIds.push(leaf.entry.id);
+    };
+
     for (const group of model.groups) {
       const gid = group.meta.id;
-      if (focus && focus.group !== 'root' && focus.group !== gid) continue;
-      const showGroup = showRoot || !focus?.section;
-      if (showGroup) ids.push(groupNodeId(gid));
-      if (collapsed.has(groupKey(gid))) continue;
-      if (!focus?.section) {
-        for (const leaf of group.leaves) ids.push(leaf.entry.id);
-      }
+      const id = groupNodeId(gid);
+      const rect = rects.get(id)!;
+      const groupActive = focus?.group === gid;
+      const groupOpen = !collapsed.has(groupKey(gid));
+      // 聚焦某一支时其余分支照常渲染, 只是不参与取景
+      const inBranch = !focus || focus.group === 'root' || focus.group === gid;
+      const groupFramed = inBranch && (showRoot || !focus?.section);
+      // 计数只算直接子节点: 有分类时是分类数, 否则是直接挂的条目数
+      const childCount = group.sections.length > 0 ? group.sections.length : group.leaves.length;
+
+      nodes.push({
+        id,
+        type: 'category',
+        position: { x: rect.x, y: rect.y },
+        style: { width: rect.width, height: rect.height },
+        data: {
+          kind: 'group',
+          group: gid,
+          label: group.meta.label,
+          hint: group.meta.hint,
+          count: childCount,
+          active: groupActive,
+          open: groupOpen,
+        },
+        draggable: false,
+      });
+
+      edges.push({ id: `edge-root-${gid}`, source: 'root', target: id });
+      if (groupFramed) frameIds.push(id);
+      // 分组收起时分类与条目都不渲染
+      if (!groupOpen) continue;
+
       for (const section of group.sections) {
-        if (focus?.section && focus.section !== section.meta.id) continue;
-        ids.push(sectionNodeId(gid, section.meta.id));
-        if (collapsed.has(sectionKey(gid, section.meta.id))) continue;
-        for (const leaf of section.leaves) ids.push(leaf.entry.id);
+        const sid = sectionNodeId(gid, section.meta.id);
+        const sectionRect = rects.get(sid)!;
+        const sectionActive = groupActive && focus?.section === section.meta.id;
+        const sectionOpen = !collapsed.has(sectionKey(gid, section.meta.id));
+        const sectionFramed = inBranch && (!focus?.section || focus.section === section.meta.id);
+
+        nodes.push({
+          id: sid,
+          type: 'category',
+          position: { x: sectionRect.x, y: sectionRect.y },
+          style: { width: sectionRect.width, height: sectionRect.height },
+          data: {
+            kind: 'section',
+            group: gid,
+            section: section.meta.id,
+            label: section.meta.label,
+            hint: `${group.meta.label} · ${section.meta.label}`,
+            count: section.leaves.length,
+            active: sectionActive,
+            open: sectionOpen,
+          },
+          draggable: false,
+        });
+
+        edges.push({ id: `edge-${sid}`, source: id, target: sid });
+        if (sectionFramed) frameIds.push(sid);
+        // 分类收起时只留分类节点本身
+        if (!sectionOpen) continue;
+        for (const leaf of section.leaves) pushLeaf(leaf, sid, sectionActive, sectionFramed);
       }
+
+      for (const leaf of group.leaves) pushLeaf(leaf, id, groupActive, groupFramed);
     }
-    return ids;
-  }, [collapsed, focus, model, rootOpen]);
+
+    return { nodes, edges, frameIds };
+  }, [collapsed, focus, model, profile, rects, rootOpen]);
+
+  const { nodes, edges, frameIds } = view;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -400,7 +436,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     const height = canvas.clientHeight;
     if (width === 0 || height === 0) return;
 
-    const visible = visibleIds
+    const visible = frameIds
       .map((id) => rects.get(id))
       .filter((rect): rect is Rect => rect !== undefined);
     if (visible.length === 0) return;
@@ -419,7 +455,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     const fits = fitZoom >= minZoom;
 
     // 聚焦(含收起后退回上层)要重新取景; 只增减子节点时保留缩放, 由 pin 把被点节点钉在原处
-    const focusChanged = prevFocus.current !== focus;
+    const focusChanged = !sameFocus(prevFocus.current, focus);
     prevFocus.current = focus;
     const pin = focusChanged ? null : pinRef.current;
     pinRef.current = null;
@@ -449,13 +485,11 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     if (animRef.current !== null) cancelAnimationFrame(animRef.current);
     if (!animate) {
       animRef.current = null;
-      animTargetRef.current = null;
       void setViewport(viewport, { duration: 0 });
       return;
     }
 
     // 后台标签页里 requestAnimationFrame 会被暂停, 所以只在页面可见时才走这段
-    animTargetRef.current = viewport;
     const start = getViewport();
     const centerOf = (vp: { x: number; y: number; zoom: number }) => ({
       x: (width / 2 - vp.x) / vp.zoom,
@@ -479,10 +513,9 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
         { duration: 0 },
       );
       animRef.current = t < 1 ? requestAnimationFrame(step) : null;
-      if (t >= 1) animTargetRef.current = null;
     };
     animRef.current = requestAnimationFrame(step);
-  }, [focus, getViewport, rects, resizeTick, setViewport, visibleIds]);
+  }, [focus, frameIds, getViewport, rects, resizeTick, setViewport]);
 
   // 用户主动拖拽或滚轮缩放时中断取景过渡, 避免相机和手势互相拉扯
   useEffect(() => {
@@ -492,27 +525,15 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
       if (animRef.current === null) return;
       cancelAnimationFrame(animRef.current);
       animRef.current = null;
-      animTargetRef.current = null;
-    };
-    // 页面切到后台时 requestAnimationFrame 会停摆, 直接把过渡落到终点, 免得画布停在半路
-    const settle = () => {
-      if (document.visibilityState === 'visible' || animRef.current === null) return;
-      cancelAnimationFrame(animRef.current);
-      animRef.current = null;
-      const target = animTargetRef.current;
-      animTargetRef.current = null;
-      if (target) void setViewport(target, { duration: 0 });
     };
     canvas.addEventListener('pointerdown', interrupt);
     canvas.addEventListener('wheel', interrupt, { passive: true });
-    document.addEventListener('visibilitychange', settle);
     return () => {
       canvas.removeEventListener('pointerdown', interrupt);
       canvas.removeEventListener('wheel', interrupt);
-      document.removeEventListener('visibilitychange', settle);
       if (animRef.current !== null) cancelAnimationFrame(animRef.current);
     };
-  }, [setViewport]);
+  }, []);
 
   // 画布尺寸变化后重新取景, 避免节点被裁到视野外
   useEffect(() => {
@@ -523,163 +544,8 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     return () => observer.disconnect();
   }, []);
 
-  const nodes = useMemo<FlowNode[]>(() => {
-    const rootRect = rects.get('root')!;
-    const list: FlowNode[] = [
-      {
-        id: 'root',
-        type: 'root',
-        position: { x: rootRect.x, y: rootRect.y },
-        style: { width: rootRect.width, height: rootRect.height },
-        data: {
-          kind: 'root',
-          label: profile.name,
-          open: rootOpen,
-          count: model.groups.length,
-          active: focus?.group === 'root',
-        },
-        draggable: false,
-      },
-    ];
-
-    /** 叶子常驻可点, 焦点只影响高亮 */
-    const pushLeaf = (leaf: LaidOutLeaf, highlighted: boolean) => {
-      const leafRect = rects.get(leaf.entry.id)!;
-      list.push({
-        id: leaf.entry.id,
-        type: 'leaf',
-        position: { x: leafRect.x, y: leafRect.y },
-        style: {
-          width: leafRect.width,
-          height: leafRect.height,
-        },
-        data: {
-          kind: 'leaf',
-          label: leaf.entry.label,
-          href: leaf.entry.href,
-          meta: leaf.entry.meta,
-          external: leaf.entry.external,
-        },
-        className: highlighted ? 'is-revealed' : undefined,
-        draggable: false,
-      });
-    };
-
-    for (const group of rootOpen ? model.groups : []) {
-      const gid = group.meta.id;
-      const id = groupNodeId(gid);
-      const rect = rects.get(id)!;
-      const active = focus?.group === gid;
-      // 计数只算直接子节点: 有分类时是分类数, 否则是直接挂的条目数
-      const childCount = group.sections.length > 0 ? group.sections.length : group.leaves.length;
-      // 分组展开表示它的分类可见, 收起时整组只留一个节点
-      const groupOpen = !collapsed.has(groupKey(gid));
-
-      list.push({
-        id,
-        type: 'category',
-        position: { x: rect.x, y: rect.y },
-        style: { width: rect.width, height: rect.height },
-        data: {
-          kind: 'group',
-          id: gid,
-          owner: gid,
-          label: group.meta.label,
-          hint: group.meta.hint,
-          count: childCount,
-          active,
-          expandable: childCount > 0,
-          open: groupOpen,
-        },
-        draggable: false,
-      });
-
-      // 分组收起时分类节点一并隐藏
-      if (!groupOpen) continue;
-
-      for (const section of group.sections) {
-        const sid = sectionNodeId(gid, section.meta.id);
-        const sectionRect = rects.get(sid)!;
-        const sectionActive = active && focus?.section === section.meta.id;
-        const sectionOpen = !collapsed.has(sectionKey(gid, section.meta.id));
-
-        list.push({
-          id: sid,
-          type: 'category',
-          position: { x: sectionRect.x, y: sectionRect.y },
-          style: { width: sectionRect.width, height: sectionRect.height },
-          data: {
-            kind: 'section',
-            id: section.meta.id,
-            owner: gid,
-            label: section.meta.label,
-            hint: `${group.meta.label} · ${section.meta.label}`,
-            count: section.leaves.length,
-            active: sectionActive,
-            expandable: section.leaves.length > 0,
-            open: sectionOpen,
-          },
-          draggable: false,
-        });
-
-        // 分类下的条目属于第四级, 只在展开该分类时出现
-        if (!sectionOpen) continue;
-        for (const leaf of section.leaves) pushLeaf(leaf, sectionActive);
-      }
-
-      for (const leaf of group.leaves) pushLeaf(leaf, active);
-    }
-
-    return list;
-  }, [collapsed, focus, model, profile, rects, rootOpen]);
-
-  const edges = useMemo<Edge[]>(() => {
-    const list: Edge[] = [];
-
-    const pushLeafEdge = (source: string, entryId: string, highlighted: boolean) => {
-      list.push({
-        id: `edge-${entryId}`,
-        source,
-        target: entryId,
-        className: highlighted ? 'is-revealed' : undefined,
-      });
-    };
-
-    for (const group of rootOpen ? model.groups : []) {
-      const gid = group.meta.id;
-      const active = focus?.group === gid;
-
-      list.push({
-        id: `edge-root-${gid}`,
-        source: 'root',
-        target: groupNodeId(gid),
-      });
-
-      if (collapsed.has(groupKey(gid))) continue;
-
-      for (const section of group.sections) {
-        const sid = sectionNodeId(gid, section.meta.id);
-        list.push({
-          id: `edge-${sid}`,
-          source: groupNodeId(gid),
-          target: sid,
-        });
-
-        const sectionActive = active && focus?.section === section.meta.id;
-        if (collapsed.has(sectionKey(gid, section.meta.id))) continue;
-        for (const leaf of section.leaves) pushLeafEdge(sid, leaf.entry.id, sectionActive);
-      }
-
-      for (const leaf of group.leaves) pushLeafEdge(groupNodeId(gid), leaf.entry.id, active);
-    }
-
-    return list;
-  }, [collapsed, focus, model, rootOpen]);
-
   return (
-    <GraphInteraction.Provider
-      value={{ focusRoot, focusGroup, focusSection, toggleGroup, toggleSection, toggleRoot, reset }}
-    >
+    <GraphInteraction.Provider value={{ focus: focusNode, toggle: toggleNode }}>
       <div className="graph-shell">
         <div className="graph-canvas" ref={canvasRef}>
           <ReactFlow

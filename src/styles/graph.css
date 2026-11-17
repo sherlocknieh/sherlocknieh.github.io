@@ -12,39 +12,6 @@
   inset: 0;
 }
 
-/* 折叠与聚焦只改透明度, 不触发重新布局, 节点位置因此始终稳定 */
-.react-flow__node {
-  transition: opacity 240ms ease;
-}
-
-.react-flow__node.is-collapsed {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.react-flow__node.is-dimmed {
-  opacity: 0.3;
-}
-
-.react-flow__edge {
-  transition: opacity 240ms ease;
-}
-
-.react-flow__edge.is-collapsed {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* 折叠分支的连线不参与命中测试, 否则会挡住画布的点击 */
-.react-flow__edge.is-collapsed .react-flow__edge-interaction,
-.react-flow__edge.is-collapsed .react-flow__edge-path {
-  pointer-events: none;
-}
-
-.react-flow__edge.is-dimmed {
-  opacity: 0.22;
-}
-
 .react-flow__edge-path {
   stroke: var(--line-strong);
   stroke-width: 1.4;
@@ -84,7 +51,7 @@
   background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  transition: transform 240ms ease, border-color 0.18s ease, background 0.18s ease;
+  transition: border-color 0.18s ease, background 0.18s ease;
 }
 
 /* 分组与分类卡片里, 主体负责聚焦, 右侧按钮负责展开收起 */
@@ -104,18 +71,11 @@
   cursor: pointer;
 }
 
-.react-flow__node.is-collapsed .node-card {
-  transform: translateX(-16px) scale(0.94);
-}
-
-.react-flow__node.is-revealed .node-card {
-  transform: none;
-}
-
 .node-card:hover {
   border-color: var(--accent);
 }
 
+.node-card--root,
 .node-card--group {
   justify-content: flex-start;
   padding: 0 12px 0 16px;
@@ -244,8 +204,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .react-flow__node,
-  .react-flow__edge,
   .node-card {
     transition: none;
   }

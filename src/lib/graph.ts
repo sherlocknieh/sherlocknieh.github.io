@@ -55,18 +55,15 @@ export interface GraphEntry {
 export const groupKey = (id: GroupId) => id;
 export const sectionKey = (group: GroupId, section: string) => `${group}/${section}`;
 
+/** 根节点收起时整棵树只剩根; 和分组、分类共用同一个 collapsed 集合 */
+export const ROOT_KEY = 'root';
+
 /** 默认只展开到二级: 根与分组可见, 分组下的分类与条目都收起 */
 export function defaultCollapsed(): Set<string> {
   return new Set([
     ...GROUPS.map((group) => groupKey(group.id)),
     ...SECTIONS.map((section) => sectionKey(section.group, section.id)),
   ]);
-}
-
-export function groupById(id: GroupId): GraphGroupMeta {
-  const found = GROUPS.find((group) => group.id === id);
-  if (!found) throw new Error(`未知的节点分组: ${id}`);
-  return found;
 }
 
 export function sectionById(id: string): GraphSectionMeta {
