@@ -380,13 +380,13 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
 
     const box = unionRect(visible);
     const margin = 40;
-    const rawFit = Math.min(
+    const fitZoom = Math.min(
       (width - margin * 2) / Math.max(box.width, 1),
       (height - margin * 2) / Math.max(box.height, 1),
+      1.1,
     );
 
     // 整棵树装得下就完整取景; 装不下时锁定最小缩放并从树顶开始显示, 其余靠拖拽查看
-    const fitZoom = Math.min(rawFit, 1.1);
     const zoom = Math.max(fitZoom, 0.55);
     const fits = fitZoom >= 0.55;
 
@@ -407,8 +407,8 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     const anchor = anchorId ? rects.get(anchorId) : undefined;
 
     let viewport;
-    if (pin && pinned && current && current.zoom <= rawFit) {
-      // 剩余内容在现有缩放下装得下: 缩放不动, 只平移让被点节点停在原屏幕位置
+    if (pin && pinned && current) {
+      // 只平移不缩放: 始终保留当前缩放, 被点节点停在原屏幕位置, 超出的内容靠拖动查看
       viewport = {
         x: pin.x - (pinned.x + pinned.width / 2) * current.zoom,
         y: pin.y - (pinned.y + pinned.height / 2) * current.zoom,
