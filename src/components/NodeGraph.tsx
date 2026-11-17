@@ -216,7 +216,8 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
   const [resizeTick, setResizeTick] = useState(0);
   const canvasRef = useRef<HTMLDivElement>(null);
   const didInit = useRef(false);
-  const { setViewport } = useReactFlow();
+  const prevFocus = useRef<Focus | null>(null);
+  const { getViewport, setViewport } = useReactFlow();
 
   // 默认展开到三级: 根 → 分组 → 分类, 分类下的条目默认收起, 由节点上的按钮展开
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(defaultCollapsed);
@@ -224,6 +225,48 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
   const [rootOpen, setRootOpen] = useState(true);
 
   const model = useMemo(() => buildGraph(entries, collapsed), [entries, collapsed]);
+
+  /** 全部节点的画布矩形, 视口计算只依赖它, 不读浏览器测量值 */
+  const rects = useMemo(() => {
+    const map = new Map<string, Rect>();
+    map.set('root', rectOf(model.root, NODE_SIZE.root));
+    for (const group of model.groups) {
+      map.set(groupNodeId(group.meta.id), rectOf(group.center, NODE_SIZE.category));
+      for (const leaf of group.leaves) {
+        map.set(leaf.entry.id, rectOf(leaf.center, NODE_SIZE.leaf));
+      }
+      for (const section of group.sections) {
+        map.set(
+          sectionNodeId(group.meta.id, section.meta.id),
+          rectOf(section.center, NODE_SIZE.section),
+        );
+        for (const leaf of section.leaves) {
+          map.set(leaf.entry.id, rectOf(leaf.center, NODE_SIZE.leaf));
+        }
+      }
+    }
+    return map;
+  }, [model]);
+
+  /**
+   * 收起/展开前记下被点节点此刻的屏幕位置: 布局会随总高度重排, 只有相机跟着它走,
+   * 视觉上才是"点哪个节点就从那个节点收拢", 而不是整棵树连相机一起挪
+   */
+  const pinRef = useRef<{ id: string; x: number; y: number } | null>(null);
+  const pinNode = useCallback(
+    (id: string) => {
+      const rect = rects.get(id);
+      const viewport = getViewport();
+      pinRef.current = rect
+        ? {
+            id,
+            x: (rect.x + rect.width / 2) * viewport.zoom + viewport.x,
+            y: (rect.y + rect.height / 2) * viewport.zoom + viewport.y,
+          }
+        : null;
+    },
+    [getViewport, rects],
+  );
 
   /** 聚焦是幂等的: 重复点击同一节点保持选中, 取消选中只走总览按钮或空白处 */
   const focusGroup = useCallback((id: GroupId) => {
@@ -248,55 +291,56 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
   }, []);
 
   /** 分组只控制分类是否可见, 分类自身的条目展开状态保持不变 */
-  const toggleGroup = useCallback((id: GroupId) => {
-    setCollapsed((current) => {
-      const next = new Set(current);
-      const key = groupKey(id);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }, []);
+  const toggleGroup = useCallback(
+    (id: GroupId) => {
+      pinNode(groupNodeId(id));
+      // 收起时取景退回上一级: 正看着这个分组就回到根节点, 聚焦别处则保持不动
+      if (!collapsed.has(groupKey(id))) {
+        setFocus((current) => (current?.group === id ? null : current));
+      }
+      setCollapsed((current) => {
+        const next = new Set(current);
+        const key = groupKey(id);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        return next;
+      });
+    },
+    [collapsed, pinNode],
+  );
 
-  const toggleSection = useCallback((group: GroupId, section: string) => {
-    setCollapsed((current) => {
-      const next = new Set(current);
-      const key = sectionKey(group, section);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }, []);
+  const toggleSection = useCallback(
+    (group: GroupId, section: string) => {
+      pinNode(sectionNodeId(group, section));
+      // 收起分类时取景退回到所属分组
+      if (!collapsed.has(sectionKey(group, section))) {
+        setFocus((current) =>
+          current?.group === group && current.section === section ? { group } : current,
+        );
+      }
+      setCollapsed((current) => {
+        const next = new Set(current);
+        const key = sectionKey(group, section);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        return next;
+      });
+    },
+    [collapsed, pinNode],
+  );
 
-  const toggleRoot = useCallback(() => setRootOpen((open) => !open), []);
+  const toggleRoot = useCallback(() => {
+    pinNode('root');
+    // 根节点收起后整棵树只剩它自己, 焦点不再有意义
+    if (rootOpen) setFocus(null);
+    setRootOpen((open) => !open);
+  }, [pinNode, rootOpen]);
 
   const reset = useCallback(() => {
     setFocus(null);
     setCollapsed(defaultCollapsed());
     setRootOpen(true);
   }, []);
-
-  /** 全部节点的画布矩形, 视口计算只依赖它, 不读浏览器测量值 */
-  const rects = useMemo(() => {
-    const map = new Map<string, Rect>();
-    map.set('root', rectOf(model.root, NODE_SIZE.root));
-    for (const group of model.groups) {
-      map.set(groupNodeId(group.meta.id), rectOf(group.center, NODE_SIZE.category));
-      for (const leaf of group.leaves) {
-        map.set(leaf.entry.id, rectOf(leaf.center, NODE_SIZE.leaf));
-      }
-      for (const section of group.sections) {
-        map.set(
-          sectionNodeId(group.meta.id, section.meta.id),
-          rectOf(section.center, NODE_SIZE.section),
-        );
-        for (const leaf of section.leaves) {
-          map.set(leaf.entry.id, rectOf(leaf.center, NODE_SIZE.leaf));
-        }
-      }
-    }
-    return map;
-  }, [model]);
 
   /** 取景范围: 无焦点时是整棵树, 聚焦分组时是该分组这一支, 聚焦分类时再收窄到该分类 */
   const visibleIds = useMemo(() => {
@@ -332,15 +376,23 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
 
     const box = unionRect(visible);
     const margin = 40;
-    const fitZoom = Math.min(
+    const rawFit = Math.min(
       (width - margin * 2) / Math.max(box.width, 1),
       (height - margin * 2) / Math.max(box.height, 1),
-      1.1,
     );
 
     // 整棵树装得下就完整取景; 装不下时锁定最小缩放并从树顶开始显示, 其余靠拖拽查看
+    const fitZoom = Math.min(rawFit, 1.1);
     const zoom = Math.max(fitZoom, 0.55);
     const fits = fitZoom >= 0.55;
+
+    // 聚焦(含收起后退回上层)要重新取景; 只增减子节点时保留缩放, 由 pin 把被点节点钉在原处
+    const focusChanged = prevFocus.current !== focus;
+    prevFocus.current = focus;
+    const pin = focusChanged ? null : pinRef.current;
+    pinRef.current = null;
+    const pinned = pin ? rects.get(pin.id) : undefined;
+    const current = pinned ? getViewport() : null;
 
     // 聚焦时把焦点节点放在垂直居中、水平偏左的位置, 右侧留给展开出来的内容
     const anchorId = focus
@@ -351,7 +403,14 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     const anchor = anchorId ? rects.get(anchorId) : undefined;
 
     let viewport;
-    if (anchor) {
+    if (pin && pinned && current && current.zoom <= rawFit) {
+      // 剩余内容在现有缩放下装得下: 缩放不动, 只平移让被点节点停在原屏幕位置
+      viewport = {
+        x: pin.x - (pinned.x + pinned.width / 2) * current.zoom,
+        y: pin.y - (pinned.y + pinned.height / 2) * current.zoom,
+        zoom: current.zoom,
+      };
+    } else if (anchor) {
       // 焦点节点固定在水平 32%、垂直居中; 缩放按它左侧残留、右侧内容与高度收紧, 保证边缘不被裁
       const anchorCx = anchor.x + anchor.width / 2;
       const anchorCy = anchor.y + anchor.height / 2;
@@ -382,7 +441,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     const animate = didInit.current && document.visibilityState === 'visible';
     didInit.current = true;
     void setViewport(viewport, { duration: animate ? 520 : 0 });
-  }, [focus, rects, resizeTick, setViewport, visibleIds]);
+  }, [focus, getViewport, rects, resizeTick, setViewport, visibleIds]);
 
   // 画布尺寸变化后重新取景, 避免节点被裁到视野外
   useEffect(() => {
