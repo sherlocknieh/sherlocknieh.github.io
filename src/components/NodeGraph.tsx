@@ -46,6 +46,7 @@ interface RootData extends Record<string, unknown> {
   /** 根节点收起时整棵树只剩它自己 */
   open: boolean;
   count: number;
+  active: boolean;
 }
 
 interface GroupData extends Record<string, unknown> {
@@ -74,11 +75,12 @@ interface LeafData extends Record<string, unknown> {
 
 type FlowNode = Node<RootData | GroupData | LeafData>;
 
-/** 聚焦目标: 分组或分组下的分类, 只影响取景, 不影响展开状态 */
-type Focus = { group: GroupId; section?: string };
+/** 聚焦目标: 根节点、分组或分组下的分类, 只影响取景, 不影响展开状态 */
+type Focus = { group: 'root'; section?: undefined } | { group: GroupId; section?: string };
 
 /** 节点卡片通过 context 改画布状态, 避免把回调塞进可序列化的 data 里 */
 const GraphInteraction = createContext<{
+  focusRoot: () => void;
   focusGroup: (id: GroupId) => void;
   focusSection: (group: GroupId, section: string) => void;
   toggleGroup: (id: GroupId) => void;
@@ -86,6 +88,7 @@ const GraphInteraction = createContext<{
   toggleRoot: () => void;
   reset: () => void;
 }>({
+  focusRoot: () => {},
   focusGroup: () => {},
   focusSection: () => {},
   toggleGroup: () => {},
@@ -131,12 +134,12 @@ const ResetIcon = () => (
 
 function RootNode({ data }: NodeProps) {
   const d = data as unknown as RootData;
-  const { reset, toggleRoot } = useContext(GraphInteraction);
+  const { focusRoot, toggleRoot } = useContext(GraphInteraction);
 
   return (
-    <div className="node-card node-card--group">
+    <div className={`node-card node-card--group${d.active ? ' is-active' : ''}`}>
       <Handle type="source" position={Position.Right} className="node-handle" isConnectable={false} />
-      <button type="button" className="node-main" onClick={reset} title="回到总览">
+      <button type="button" className="node-main" onClick={focusRoot} title="聚焦根节点">
         <span className="node-group-label">{d.label}</span>
       </button>
       <button
@@ -268,6 +271,12 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     [getViewport, rects],
   );
 
+  /** 根节点与分组同等对待: 点它就把取景锚定到根, 铺开整棵树 */
+  const focusRoot = useCallback(() => {
+    setFocus({ group: 'root' });
+    setRootOpen(true);
+  }, []);
+
   /** 聚焦是幂等的: 重复点击同一节点保持选中, 取消选中只走总览按钮或空白处 */
   const focusGroup = useCallback((id: GroupId) => {
     setFocus({ group: id });
@@ -335,10 +344,11 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
       pinRef.current = null;
       setFocus(null);
     } else {
-      pinNode('root');
+      // 展开根节点同时聚焦它, 与其他节点"展开即进入"的节奏一致
+      setFocus({ group: 'root' });
     }
     setRootOpen((open) => !open);
-  }, [pinNode, rootOpen]);
+  }, [rootOpen]);
 
   const reset = useCallback(() => {
     setFocus(null);
@@ -352,7 +362,8 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     if (!rootOpen) return ids;
     for (const group of model.groups) {
       const gid = group.meta.id;
-      if (focus && focus.group !== gid) continue;
+      // 聚焦根节点就是看整棵树, 其余焦点只留自己这一支
+      if (focus && focus.group !== 'root' && focus.group !== gid) continue;
       ids.push(groupNodeId(gid));
       if (collapsed.has(groupKey(gid))) continue;
       for (const leaf of group.leaves) ids.push(leaf.entry.id);
@@ -400,9 +411,11 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
 
     // 聚焦时把焦点节点放在垂直居中、水平偏左的位置, 右侧留给展开出来的内容
     const anchorId = focus
-      ? focus.section
-        ? sectionNodeId(focus.group, focus.section)
-        : groupNodeId(focus.group)
+      ? focus.group === 'root'
+        ? 'root'
+        : focus.section
+          ? sectionNodeId(focus.group, focus.section)
+          : groupNodeId(focus.group)
       : null;
     const anchor = anchorId ? rects.get(anchorId) : undefined;
 
@@ -469,6 +482,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
           label: profile.name,
           open: rootOpen,
           count: model.groups.length,
+          active: focus?.group === 'root',
         },
         draggable: false,
       },
@@ -610,7 +624,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
 
   return (
     <GraphInteraction.Provider
-      value={{ focusGroup, focusSection, toggleGroup, toggleSection, toggleRoot, reset }}
+      value={{ focusRoot, focusGroup, focusSection, toggleGroup, toggleSection, toggleRoot, reset }}
     >
       <div className="graph-shell">
         <div className="graph-canvas" ref={canvasRef}>
