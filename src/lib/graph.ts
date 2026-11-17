@@ -15,8 +15,8 @@ export interface GraphGroupMeta {
 
 export const GROUPS: readonly GraphGroupMeta[] = [
   { id: 'apps', label: '在线APP', hint: '能直接打开用的东西' },
-  { id: 'lab', label: '学习与实验', hint: '课程、练习与折腾' },
   { id: 'tools', label: '插件&工具', hint: '装进浏览器和系统里的小东西' },
+  { id: 'lab', label: '学习与实验', hint: '课程、练习与折腾' },
   { id: 'writing', label: '写作', hint: '写过的东西' },
   { id: 'about', label: '关于', hint: '关于我' },
 ];
@@ -49,6 +49,15 @@ export interface GraphEntry {
   href: string;
   meta?: string;
   external?: boolean;
+}
+
+/** 收起状态的键: 分组用自身 id 表示收起它直接挂的条目, 分类用 `分组/分类` 表示收起它的条目 */
+export const groupKey = (id: GroupId) => id;
+export const sectionKey = (group: GroupId, section: string) => `${group}/${section}`;
+
+/** 默认收起所有分类的条目: 画布一进来只展开到分类这一级 */
+export function defaultCollapsed(): Set<string> {
+  return new Set(SECTIONS.map((section) => sectionKey(section.group, section.id)));
 }
 
 export function groupById(id: GroupId): GraphGroupMeta {

@@ -28,7 +28,13 @@ import {
   type LaidOutLeaf,
   type Rect,
 } from '../lib/graph-layout';
-import type { GraphEntry, GroupId } from '../lib/graph';
+import {
+  defaultCollapsed,
+  groupKey,
+  sectionKey,
+  type GraphEntry,
+  type GroupId,
+} from '../lib/graph';
 
 export interface GraphProfile {
   name: string;
@@ -51,6 +57,10 @@ interface GroupData extends Record<string, unknown> {
   hint: string;
   count: number;
   active: boolean;
+  /** 是否还有可展开的条目, 没有条目的节点不显示展开按钮 */
+  expandable: boolean;
+  /** 条目当前是否展开 */
+  open: boolean;
 }
 
 interface LeafData extends Record<string, unknown> {
@@ -59,20 +69,27 @@ interface LeafData extends Record<string, unknown> {
   href: string;
   meta?: string;
   external?: boolean;
-  revealed: boolean;
 }
 
 type FlowNode = Node<RootData | GroupData | LeafData>;
 
-/** 聚焦状态: 只选分组时展示分类, 再选分类时展示该分类的叶子 */
+/** 聚焦目标: 分组或分组下的分类, 只影响取景, 不影响展开状态 */
 type Focus = { group: GroupId; section?: string };
 
 /** 节点卡片通过 context 改画布状态, 避免把回调塞进可序列化的 data 里 */
 const GraphInteraction = createContext<{
+  focusGroup: (id: GroupId) => void;
+  focusSection: (group: GroupId, section: string) => void;
   toggleGroup: (id: GroupId) => void;
   toggleSection: (group: GroupId, section: string) => void;
   reset: () => void;
-}>({ toggleGroup: () => {}, toggleSection: () => {}, reset: () => {} });
+}>({
+  focusGroup: () => {},
+  focusSection: () => {},
+  toggleGroup: () => {},
+  toggleSection: () => {},
+  reset: () => {},
+});
 
 const groupNodeId = (id: GroupId) => `group-${id}`;
 const sectionNodeId = (group: GroupId, section: string) => `section-${group}-${section}`;
@@ -127,25 +144,33 @@ function RootNode({ data }: NodeProps) {
 
 function GroupNode({ data }: NodeProps) {
   const d = data as unknown as GroupData;
-  const { toggleGroup, toggleSection } = useContext(GraphInteraction);
+  const { focusGroup, focusSection, toggleGroup, toggleSection } = useContext(GraphInteraction);
   const isSection = d.kind === 'section';
 
   return (
-    <button
-      type="button"
-      className={`node-card node-card--${d.kind}${d.active ? ' is-active' : ''}`}
-      onClick={() => (isSection ? toggleSection(d.owner, d.id) : toggleGroup(d.owner))}
-      aria-expanded={d.active}
-      title={d.hint}
-    >
+    <div className={`node-card node-card--${d.kind}${d.active ? ' is-active' : ''}`} title={d.hint}>
       <Handle type="target" position={Position.Left} className="node-handle" isConnectable={false} />
-      <span className="node-group-label">{d.label}</span>
-      <span className="node-badge">{d.count}</span>
-      <span className="node-toggle">
-        <PlusMinusIcon open={d.active} />
-      </span>
+      <button
+        type="button"
+        className="node-main"
+        onClick={() => (isSection ? focusSection(d.owner, d.id) : focusGroup(d.owner))}
+      >
+        <span className="node-group-label">{d.label}</span>
+        <span className="node-badge">{d.count}</span>
+      </button>
+      {d.expandable && (
+        <button
+          type="button"
+          className="node-toggle"
+          aria-expanded={d.open}
+          aria-label={d.open ? '收起' : '展开'}
+          onClick={() => (isSection ? toggleSection(d.owner, d.id) : toggleGroup(d.owner))}
+        >
+          <PlusMinusIcon open={d.open} />
+        </button>
+      )}
       <Handle type="source" position={Position.Right} className="node-handle" isConnectable={false} />
-    </button>
+    </div>
   );
 }
 
@@ -153,14 +178,13 @@ function LeafNode({ data }: NodeProps) {
   const d = data as unknown as LeafData;
 
   return (
-    <div className="node-card node-card--leaf" inert={!d.revealed}>
+    <div className="node-card node-card--leaf">
       <Handle type="target" position={Position.Left} className="node-handle" isConnectable={false} />
       <a
         className="node-link"
         href={d.href}
         target={d.external ? '_blank' : undefined}
         rel={d.external ? 'noopener noreferrer' : undefined}
-        tabIndex={d.revealed ? 0 : -1}
       >
         <span className="node-leaf-label">{d.label}</span>
         <span className="node-leaf-meta">
@@ -175,29 +199,57 @@ function LeafNode({ data }: NodeProps) {
 const nodeTypes = { root: RootNode, category: GroupNode, leaf: LeafNode };
 
 function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: GraphProfile }) {
+  // 节点始终全部展开, 点击只改变取景焦点
   const [focus, setFocus] = useState<Focus | null>(null);
   const [resizeTick, setResizeTick] = useState(0);
   const canvasRef = useRef<HTMLDivElement>(null);
   const didInit = useRef(false);
   const { setViewport } = useReactFlow();
 
-  // 只有当前聚焦的分支展开, 其余分组收成一个节点, 总览因此始终紧凑
-  const model = useMemo(
-    () => buildGraph(entries, focus ? { group: focus.group, section: focus.section } : undefined),
-    [entries, focus],
-  );
+  // 默认展开到三级: 根 → 分组 → 分类, 分类下的条目默认收起, 由节点上的按钮展开
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(defaultCollapsed);
 
-  const toggleGroup = useCallback((id: GroupId) => {
+  const model = useMemo(() => buildGraph(entries, collapsed), [entries, collapsed]);
+
+  const focusGroup = useCallback((id: GroupId) => {
     setFocus((current) => (current?.group === id && !current.section ? null : { group: id }));
   }, []);
 
-  const toggleSection = useCallback((group: GroupId, section: string) => {
+  const focusSection = useCallback((group: GroupId, section: string) => {
     setFocus((current) =>
       current?.group === group && current.section === section ? { group } : { group, section },
     );
   }, []);
 
-  const reset = useCallback(() => setFocus(null), []);
+  /** 收起分组时连带收起它的分类, 展开时分类回到展开状态 */
+  const toggleGroup = useCallback((id: GroupId) => {
+    setCollapsed((current) => {
+      const next = new Set(current);
+      const key = groupKey(id);
+      if (next.has(key)) {
+        next.delete(key);
+        for (const item of next) if (item.startsWith(`${id}/`)) next.delete(item);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleSection = useCallback((group: GroupId, section: string) => {
+    setCollapsed((current) => {
+      const next = new Set(current);
+      const key = sectionKey(group, section);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  const reset = useCallback(() => {
+    setFocus(null);
+    setCollapsed(defaultCollapsed());
+  }, []);
 
   /** 全部节点的画布矩形, 视口计算只依赖它, 不读浏览器测量值 */
   const rects = useMemo(() => {
@@ -221,29 +273,23 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     return map;
   }, [model]);
 
-  /** 总览只看根与分组; 聚焦分组看分类, 再聚焦分类才看它的叶子 */
+  /** 取景范围: 无焦点时是整棵树, 聚焦分组时是该分组这一支, 聚焦分类时再收窄到该分类 */
   const visibleIds = useMemo(() => {
-    if (!focus) return ['root', ...model.groups.map((group) => groupNodeId(group.meta.id))];
-
-    const group = model.groups.find((item) => item.meta.id === focus.group);
-    if (!group) return ['root'];
-
-    const groupId = groupNodeId(focus.group);
-    if (!focus.section) {
-      return [
-        groupId,
-        ...group.sections.map((section) => sectionNodeId(focus.group, section.meta.id)),
-        ...group.leaves.map((leaf) => leaf.entry.id),
-      ];
+    const ids = ['root'];
+    for (const group of model.groups) {
+      const gid = group.meta.id;
+      if (focus && focus.group !== gid) continue;
+      ids.push(groupNodeId(gid));
+      for (const leaf of group.leaves) ids.push(leaf.entry.id);
+      for (const section of group.sections) {
+        if (focus?.section && focus.section !== section.meta.id) continue;
+        ids.push(sectionNodeId(gid, section.meta.id));
+        if (collapsed.has(groupKey(gid)) || collapsed.has(sectionKey(gid, section.meta.id))) continue;
+        for (const leaf of section.leaves) ids.push(leaf.entry.id);
+      }
     }
-
-    const section = group.sections.find((item) => item.meta.id === focus.section);
-    return [
-      groupId,
-      sectionNodeId(focus.group, focus.section),
-      ...(section?.leaves.map((leaf) => leaf.entry.id) ?? []),
-    ];
-  }, [focus, model]);
+    return ids;
+  }, [collapsed, focus, model]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -258,17 +304,21 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     if (visible.length === 0) return;
 
     const box = unionRect(visible);
-    const margin = 56;
-    const zoom = Math.min(
+    const margin = 40;
+    const fitZoom = Math.min(
       (width - margin * 2) / Math.max(box.width, 1),
       (height - margin * 2) / Math.max(box.height, 1),
       1.1,
     );
 
+    // 整棵树装得下就完整取景; 装不下时锁定最小缩放并从树顶开始显示, 其余靠拖拽查看
+    const zoom = Math.max(fitZoom, 0.55);
+    const fits = fitZoom >= 0.55;
+
     void setViewport(
       {
         x: width / 2 - (box.x + box.width / 2) * zoom,
-        y: height / 2 - (box.y + box.height / 2) * zoom,
+        y: fits ? height / 2 - (box.y + box.height / 2) * zoom : margin - box.y * zoom,
         zoom,
       },
       { duration: didInit.current ? 520 : 0 },
@@ -302,8 +352,8 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
       },
     ];
 
-    /** 叶子在被当前聚焦路径展开时才能点击, 折叠态直接退出命中测试 */
-    const pushLeaf = (leaf: LaidOutLeaf, revealed: boolean) => {
+    /** 叶子常驻可点, 焦点只影响高亮 */
+    const pushLeaf = (leaf: LaidOutLeaf, highlighted: boolean) => {
       const leafRect = rects.get(leaf.entry.id)!;
       list.push({
         id: leaf.entry.id,
@@ -312,8 +362,6 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
         style: {
           width: leafRect.width,
           height: leafRect.height,
-          // 折叠时必须用行内样式关掉命中测试: React Flow 会给可选中节点写 pointer-events: all
-          pointerEvents: revealed ? 'all' : 'none',
         },
         data: {
           kind: 'leaf',
@@ -321,9 +369,8 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
           href: leaf.entry.href,
           meta: leaf.entry.meta,
           external: leaf.entry.external,
-          revealed,
         },
-        className: revealed ? 'is-revealed' : 'is-collapsed',
+        className: highlighted ? 'is-revealed' : undefined,
         draggable: false,
       });
     };
@@ -333,7 +380,6 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
       const id = groupNodeId(gid);
       const rect = rects.get(id)!;
       const active = focus?.group === gid;
-      const dimmed = focus !== null && !active;
       const leafCount =
         group.leaves.length +
         group.sections.reduce((sum, section) => sum + section.leaves.length, 0);
@@ -351,8 +397,9 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
           hint: group.meta.hint,
           count: leafCount,
           active,
+          expandable: group.leaves.length > 0,
+          open: !collapsed.has(groupKey(gid)),
         },
-        className: dimmed ? 'is-dimmed' : undefined,
         draggable: false,
       });
 
@@ -360,16 +407,14 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
         const sid = sectionNodeId(gid, section.meta.id);
         const sectionRect = rects.get(sid)!;
         const sectionActive = active && focus?.section === section.meta.id;
+        const sectionOpen =
+          !collapsed.has(groupKey(gid)) && !collapsed.has(sectionKey(gid, section.meta.id));
 
         list.push({
           id: sid,
           type: 'category',
           position: { x: sectionRect.x, y: sectionRect.y },
-          style: {
-            width: sectionRect.width,
-            height: sectionRect.height,
-            pointerEvents: active ? 'all' : 'none',
-          },
+          style: { width: sectionRect.width, height: sectionRect.height },
           data: {
             kind: 'section',
             id: section.meta.id,
@@ -378,11 +423,14 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
             hint: `${group.meta.label} · ${section.meta.label}`,
             count: section.leaves.length,
             active: sectionActive,
+            expandable: section.leaves.length > 0,
+            open: sectionOpen,
           },
-          className: active ? 'is-revealed' : 'is-collapsed',
           draggable: false,
         });
 
+        // 分类下的条目属于第四级, 只在展开该分类时出现
+        if (!sectionOpen) continue;
         for (const leaf of section.leaves) pushLeaf(leaf, sectionActive);
       }
 
@@ -390,30 +438,28 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     }
 
     return list;
-  }, [focus, model, profile, rects]);
+  }, [collapsed, focus, model, profile, rects]);
 
   const edges = useMemo<Edge[]>(() => {
     const list: Edge[] = [];
 
-    const pushLeafEdge = (source: string, entryId: string, revealed: boolean) => {
+    const pushLeafEdge = (source: string, entryId: string, highlighted: boolean) => {
       list.push({
         id: `edge-${entryId}`,
         source,
         target: entryId,
-        className: revealed ? 'is-revealed' : 'is-collapsed',
+        className: highlighted ? 'is-revealed' : undefined,
       });
     };
 
     for (const group of model.groups) {
       const gid = group.meta.id;
       const active = focus?.group === gid;
-      const dimmed = focus !== null && !active;
 
       list.push({
         id: `edge-root-${gid}`,
         source: 'root',
         target: groupNodeId(gid),
-        className: dimmed ? 'is-dimmed' : undefined,
       });
 
       for (const section of group.sections) {
@@ -422,10 +468,10 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
           id: `edge-${sid}`,
           source: groupNodeId(gid),
           target: sid,
-          className: active ? 'is-revealed' : 'is-collapsed',
         });
 
         const sectionActive = active && focus?.section === section.meta.id;
+        if (collapsed.has(groupKey(gid)) || collapsed.has(sectionKey(gid, section.meta.id))) continue;
         for (const leaf of section.leaves) pushLeafEdge(sid, leaf.entry.id, sectionActive);
       }
 
@@ -433,10 +479,12 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     }
 
     return list;
-  }, [focus, model]);
+  }, [collapsed, focus, model]);
 
   return (
-    <GraphInteraction.Provider value={{ toggleGroup, toggleSection, reset }}>
+    <GraphInteraction.Provider
+      value={{ focusGroup, focusSection, toggleGroup, toggleSection, reset }}
+    >
       <div className="graph-shell">
         <div className="graph-canvas" ref={canvasRef}>
           <ReactFlow

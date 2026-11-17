@@ -1,7 +1,9 @@
 import {
   GROUPS,
   SECTIONS,
+  groupKey,
   sectionById,
+  sectionKey,
   type GraphEntry,
   type GraphGroupMeta,
   type GraphSectionMeta,
@@ -64,12 +66,6 @@ export interface GraphModel {
   groups: LaidOutGroup[];
 }
 
-/** 画布的展开状态: 聚焦分组时露出分类, 聚焦分类时再露出叶子 */
-export interface GraphExpansion {
-  group: GroupId;
-  section?: string;
-}
-
 /** n 个节点纵向堆叠占用的高度 */
 const stackHeight = (count: number, gap: number, nodeHeight: number) =>
   count === 0 ? 0 : (count - 1) * gap + nodeHeight;
@@ -87,18 +83,23 @@ function sectionsOf(group: GroupId, entries: GraphEntry[]): GraphSectionMeta[] {
   return SECTIONS.filter((section) => section.group === group && used.has(section.id));
 }
 
-/** 分类块展开时容纳叶子, 收起时只占分类节点的高度 */
-const sectionBlockHeight = (count: number, expanded: boolean) =>
-  expanded ? Math.max(leafSpan(count), NODE_SIZE.section.height) : NODE_SIZE.section.height;
+/** 分类块的高度: 展开时容纳叶子, 收起时只占分类节点的高度 */
+const sectionBlockHeight = (count: number, revealed: boolean) =>
+  revealed ? Math.max(leafSpan(count), NODE_SIZE.section.height) : NODE_SIZE.section.height;
 
-/** 分组的完整内容高度, 只有展开的分组才按它占位 */
+/** 分类的条目是否展开: 分组收起时整组收起, 否则看分类自身是否收起 */
+const isSectionOpen = (group: GroupId, section: string, collapsed: ReadonlySet<string>) =>
+  !collapsed.has(groupKey(group)) && !collapsed.has(sectionKey(group, section));
+
+/** 分组的完整内容高度, 分类块与间距纵向堆叠 */
 function groupContentHeight(
   group: GroupId,
   entries: GraphEntry[],
-  expandedSection?: string,
+  collapsed: ReadonlySet<string>,
 ): number {
   const sections = sectionsOf(group, entries);
   if (sections.length === 0) {
+    if (collapsed.has(groupKey(group))) return NODE_SIZE.category.height;
     return Math.max(leafSpan(entries.length), NODE_SIZE.category.height);
   }
 
@@ -106,7 +107,10 @@ function groupContentHeight(
     sections.reduce(
       (sum, section) =>
         sum +
-        sectionBlockHeight(leavesOf(entries, section.id).length, section.id === expandedSection),
+        sectionBlockHeight(
+          leavesOf(entries, section.id).length,
+          isSectionOpen(group, section.id, collapsed),
+        ),
       0,
     ) +
     AXIS.sectionGapY * (sections.length - 1);
@@ -117,9 +121,9 @@ function buildSection(
   meta: GraphSectionMeta,
   entries: GraphEntry[],
   top: number,
-  expanded: boolean,
+  revealed: boolean,
 ): LaidOutSection {
-  const height = sectionBlockHeight(entries.length, expanded);
+  const height = sectionBlockHeight(entries.length, revealed);
   const leafTop = top + (height - leafSpan(entries.length)) / 2;
 
   return {
@@ -137,7 +141,7 @@ function buildGroup(
   entries: GraphEntry[],
   top: number,
   height: number,
-  expandedSection?: string,
+  collapsed: ReadonlySet<string>,
 ): LaidOutGroup {
   const center: Point = { x: AXIS.groupX, y: top + height / 2 };
   const leafTop = top + (height - leafSpan(entries.length)) / 2;
@@ -160,14 +164,10 @@ function buildGroup(
 
   let cursor = top;
   const laidOut = sections.map((section) => {
-    const laid = buildSection(
-      section,
-      leavesOf(entries, section.id),
-      cursor,
-      section.id === expandedSection,
-    );
-    cursor += sectionBlockHeight(leavesOf(entries, section.id).length, section.id === expandedSection);
-    cursor += AXIS.sectionGapY;
+    const sectionRevealed = isSectionOpen(meta.id, section.id, collapsed);
+    const laid = buildSection(section, leavesOf(entries, section.id), cursor, sectionRevealed);
+    cursor +=
+      sectionBlockHeight(leavesOf(entries, section.id).length, sectionRevealed) + AXIS.sectionGapY;
     return laid;
   });
 
@@ -176,21 +176,18 @@ function buildGroup(
 
 /**
  * 把内容条目折算成树状坐标: 根在左, 分组、分类、叶子依次向右展开.
- * 未展开的分组只占一个节点的高度, 因此总览不会被大量条目撑散; 展开的分组按内容高度占位,
- * 块与块纵向堆叠, 分类与叶子因此永远不会互相重叠. 没有条目的分组不参与布局.
+ * 默认展开到分类这一级, 分类下的条目由 collapsed 决定是否占位;
+ * 展开的块按内容高度占位, 块与块纵向堆叠, 分类与叶子因此永远不会互相重叠.
+ * 没有条目的分组不参与布局.
  */
-export function buildGraph(entries: GraphEntry[], expansion?: GraphExpansion): GraphModel {
+export function buildGraph(entries: GraphEntry[], collapsed: ReadonlySet<string>): GraphModel {
   const blocks = GROUPS.filter((meta) => entries.some((entry) => entry.group === meta.id)).map(
     (meta) => {
       const groupEntries = entries.filter((entry) => entry.group === meta.id);
-      const expanded = expansion?.group === meta.id;
       return {
         meta,
         entries: groupEntries,
-        expanded,
-        height: expanded
-          ? groupContentHeight(meta.id, groupEntries, expansion?.section)
-          : NODE_SIZE.category.height,
+        height: groupContentHeight(meta.id, groupEntries, collapsed),
       };
     },
   );
@@ -201,13 +198,7 @@ export function buildGraph(entries: GraphEntry[], expansion?: GraphExpansion): G
 
   let cursor = -total / 2;
   const groups = blocks.map((block) => {
-    const laid = buildGroup(
-      block.meta,
-      block.entries,
-      cursor,
-      block.height,
-      block.expanded ? expansion?.section : undefined,
-    );
+    const laid = buildGroup(block.meta, block.entries, cursor, block.height, collapsed);
     cursor += block.height + AXIS.groupGapY;
     return laid;
   });

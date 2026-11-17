@@ -84,8 +84,24 @@
   background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  cursor: pointer;
   transition: transform 240ms ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+/* 分组与分类卡片里, 主体负责聚焦, 右侧按钮负责展开收起 */
+.node-main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
 }
 
 .react-flow__node.is-collapsed .node-card {
@@ -154,13 +170,17 @@
 
 .node-toggle {
   display: grid;
+  flex: none;
   place-items: center;
   width: 20px;
   height: 20px;
   margin-left: 8px;
+  padding: 0;
+  border: 0;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.04);
   color: var(--muted);
+  cursor: pointer;
 }
 
 .node-card.is-active {
