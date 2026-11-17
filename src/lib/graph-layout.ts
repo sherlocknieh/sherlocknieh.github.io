@@ -97,9 +97,11 @@ function groupContentHeight(
   entries: GraphEntry[],
   collapsed: ReadonlySet<string>,
 ): number {
+  // 分组收起时只占一个节点的高度, 分类与条目都不占位
+  if (collapsed.has(groupKey(group))) return NODE_SIZE.category.height;
+
   const sections = sectionsOf(group, entries);
   if (sections.length === 0) {
-    if (collapsed.has(groupKey(group))) return NODE_SIZE.category.height;
     return Math.max(leafSpan(entries.length), NODE_SIZE.category.height);
   }
 

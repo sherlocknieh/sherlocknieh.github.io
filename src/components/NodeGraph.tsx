@@ -221,17 +221,13 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
     );
   }, []);
 
-  /** 收起分组时连带收起它的分类, 展开时分类回到展开状态 */
+  /** 分组只控制分类是否可见, 分类自身的条目展开状态保持不变 */
   const toggleGroup = useCallback((id: GroupId) => {
     setCollapsed((current) => {
       const next = new Set(current);
       const key = groupKey(id);
-      if (next.has(key)) {
-        next.delete(key);
-        for (const item of next) if (item.startsWith(`${id}/`)) next.delete(item);
-      } else {
-        next.add(key);
-      }
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }, []);
@@ -280,11 +276,12 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
       const gid = group.meta.id;
       if (focus && focus.group !== gid) continue;
       ids.push(groupNodeId(gid));
+      if (collapsed.has(groupKey(gid))) continue;
       for (const leaf of group.leaves) ids.push(leaf.entry.id);
       for (const section of group.sections) {
         if (focus?.section && focus.section !== section.meta.id) continue;
         ids.push(sectionNodeId(gid, section.meta.id));
-        if (collapsed.has(groupKey(gid)) || collapsed.has(sectionKey(gid, section.meta.id))) continue;
+        if (collapsed.has(sectionKey(gid, section.meta.id))) continue;
         for (const leaf of section.leaves) ids.push(leaf.entry.id);
       }
     }
@@ -383,6 +380,8 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
       const leafCount =
         group.leaves.length +
         group.sections.reduce((sum, section) => sum + section.leaves.length, 0);
+      // 分组展开表示它的分类可见, 收起时整组只留一个节点
+      const groupOpen = !collapsed.has(groupKey(gid));
 
       list.push({
         id,
@@ -397,18 +396,20 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
           hint: group.meta.hint,
           count: leafCount,
           active,
-          expandable: group.leaves.length > 0,
-          open: !collapsed.has(groupKey(gid)),
+          expandable: leafCount > 0,
+          open: groupOpen,
         },
         draggable: false,
       });
+
+      // 分组收起时分类节点一并隐藏
+      if (!groupOpen) continue;
 
       for (const section of group.sections) {
         const sid = sectionNodeId(gid, section.meta.id);
         const sectionRect = rects.get(sid)!;
         const sectionActive = active && focus?.section === section.meta.id;
-        const sectionOpen =
-          !collapsed.has(groupKey(gid)) && !collapsed.has(sectionKey(gid, section.meta.id));
+        const sectionOpen = !collapsed.has(sectionKey(gid, section.meta.id));
 
         list.push({
           id: sid,
@@ -462,6 +463,8 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
         target: groupNodeId(gid),
       });
 
+      if (collapsed.has(groupKey(gid))) continue;
+
       for (const section of group.sections) {
         const sid = sectionNodeId(gid, section.meta.id);
         list.push({
@@ -471,7 +474,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
         });
 
         const sectionActive = active && focus?.section === section.meta.id;
-        if (collapsed.has(groupKey(gid)) || collapsed.has(sectionKey(gid, section.meta.id))) continue;
+        if (collapsed.has(sectionKey(gid, section.meta.id))) continue;
         for (const leaf of section.leaves) pushLeafEdge(sid, leaf.entry.id, sectionActive);
       }
 
