@@ -252,7 +252,7 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
   }, [model]);
 
   /**
-   * 收起/展开前记下被点节点此刻的屏幕位置: 布局会随总高度重排, 只有相机跟着它走,
+   * 收起前记下被点节点此刻的屏幕位置: 布局会随总高度重排, 只有相机跟着它走,
    * 视觉上才是"点哪个节点就从那个节点收拢", 而不是整棵树连相机一起挪
    */
   const pinRef = useRef<{ id: string; x: number; y: number } | null>(null);
@@ -302,9 +302,12 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
   /** 分组只控制分类是否可见, 分类自身的条目展开状态保持不变 */
   const toggleGroup = useCallback(
     (id: GroupId) => {
-      pinNode(groupNodeId(id));
-      // 收起时取景退回上一级: 正看着这个分组就回到根节点, 聚焦别处则保持不动
-      if (!collapsed.has(groupKey(id))) {
+      if (collapsed.has(groupKey(id))) {
+        // 展开即聚焦: 取景正好框住这个分组和刚露出的子节点
+        setFocus({ group: id });
+      } else {
+        // 收起时取景退回上一级: 正看着这个分组就回到根节点, 聚焦别处则保持不动
+        pinNode(groupNodeId(id));
         setFocus((current) => (current?.group === id ? null : current));
       }
       setCollapsed((current) => {
@@ -320,9 +323,12 @@ function GraphCanvas({ entries, profile }: { entries: GraphEntry[]; profile: Gra
 
   const toggleSection = useCallback(
     (group: GroupId, section: string) => {
-      pinNode(sectionNodeId(group, section));
-      // 收起分类时取景退回到所属分组
-      if (!collapsed.has(sectionKey(group, section))) {
+      if (collapsed.has(sectionKey(group, section))) {
+        // 展开即聚焦到该分类, 取景框住它和它的条目
+        setFocus({ group, section });
+      } else {
+        // 收起分类时取景退回到所属分组
+        pinNode(sectionNodeId(group, section));
         setFocus((current) =>
           current?.group === group && current.section === section ? { group } : current,
         );
